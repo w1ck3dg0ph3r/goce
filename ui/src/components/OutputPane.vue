@@ -24,6 +24,8 @@ watch(visible, () => {
 </template>
 
 <style lang="scss" scoped>
+@use '@/assets/themes/theme.scss';
+
 #output-pane {
   height: 10rem;
   &.hidden {
@@ -31,6 +33,8 @@ watch(visible, () => {
   }
   padding-top: 0.5rem;
   > textarea {
+    background-color: theme.$editorBackgroundColor;
+    color: theme.$editorTextColor;
     outline: none;
     border: none;
     resize: none;

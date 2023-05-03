@@ -26,24 +26,23 @@ const statusText = computed(() => {
 </template>
 
 <style scoped lang="scss">
+@use '@/assets/themes/theme.scss';
+
 $height: 1.57rem;
 
 .status-bar {
   height: $height;
-  background-color: #007acc;
-  .theme-dark & {
-    background-color: #007acc;
-  }
+  background-color: theme.$statusBarIdle;
   display: flex;
   gap: 1rem;
   padding-left: 0.5rem;
   &.error {
-    background-color: #cc6633;
+    background-color: theme.$statusBarError;
   }
 
   .text {
     line-height: $height;
-    color: #eee;
+    color: theme.$statusBarTextColor;
   }
 }
 </style>

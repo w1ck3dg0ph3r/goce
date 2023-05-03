@@ -9,6 +9,8 @@
 <style scoped lang="scss">
 @use 'sass:color';
 
+@use '@/assets/themes/theme.scss';
+
 .menu-button {
   display: flex;
   align-items: center;
@@ -16,16 +18,16 @@
 
   border: none;
   border-radius: 3px;
-  $color: #007acc;
-  background-color: color.change($color, $alpha: 0.7);
+  background-color: theme.$buttonColor;
+  opacity: 0.7;
   &:hover {
-    background-color: $color;
+    opacity: 1;
   }
   &:focus {
-    outline: 2px solid color.change($color, $alpha: 0.7);
+    outline: 2px solid theme.$buttonColor;
   }
 
-  color: #eee;
+  color: theme.$textColor;
   font-size: 1rem;
   cursor: pointer;
   :deep(i) {

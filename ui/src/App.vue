@@ -103,7 +103,8 @@ func main() {
 </template>
 
 <style lang="scss">
-@use './reset.scss';
+@use '@/reset.scss';
+@use '@/assets/themes/theme.scss';
 
 body {
   font-size: 14px;
@@ -114,11 +115,7 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-
-  background-color: #f7f7f7;
-  &.theme-dark {
-    background-color: #2d2d2d;
-  }
+  background-color: theme.$backgroundColor;
 
   .split {
     flex: 1;

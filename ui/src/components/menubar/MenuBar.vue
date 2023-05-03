@@ -3,6 +3,7 @@ import API, { type CompilerInfo } from '@/services/api'
 import State from '@/state'
 
 import { onMounted, reactive } from 'vue'
+import GoceLogo from './GoceLogo.vue'
 import MenuButton from './MenuButton.vue'
 
 import '@vscode/codicons/dist/codicon.css'
@@ -23,15 +24,12 @@ function switchTheme() {
 
 <template>
   <div id="menu">
-    <div class="logo">
-      <img src="@/assets/logo.svg" />
-    </div>
+    <GoceLogo class="logo"></GoceLogo>
     <div class="spacer"></div>
     <MenuButton @click="switchTheme">
       <i class="codicon codicon-color-mode"></i>
       <span>{{ State.theme == 'light' ? 'Dark' : 'Light' }}</span>
     </MenuButton>
-    <!-- <div class="text">Compiler:</div> -->
     <select v-model="State.selectedCompiler">
       <option v-for="c of state.compilers" :key="c.name" :value="c.name">{{ c.name }}</option>
     </select>
@@ -55,9 +53,7 @@ $height: 1.5rem;
   gap: 1rem;
 
   .logo {
-    > img {
-      height: $height;
-    }
+    height: $height;
   }
 
   .text {

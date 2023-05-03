@@ -1,0 +1,42 @@
+:global(.theme-light) {
+  --logoColor: #00acd7;
+
+  --backgroundColor: #f7f7f7;
+  --textColor: #efefef;
+  --buttonColor: #007acc;
+
+  --editorBackgroundColor: #ffffff;
+  --editorTextColor: #111111;
+
+  --statusBarIdle: #007acc;
+  --statusBarError: #cc6633;
+  --statusBarTextColor: #f1f1f1;
+}
+
+:global(.theme-dark) {
+  --logoColor: #a8a8a8;
+
+  --backgroundColor: #2d2d2d;
+  --textColor: #c7c7c7;
+  --buttonColor: #3d3d3d;
+
+  --editorBackgroundColor: #1e1e1e;
+  --editorTextColor: #d6d6d6;
+
+  --statusBarIdle: #007acc;
+  --statusBarError: #cc6633;
+  --statusBarTextColor: #f1f1f1;
+}
+
+$logoColor: var(--logoColor);
+
+$backgroundColor: var(--backgroundColor);
+$textColor: var(--textColor);
+$buttonColor: var(--buttonColor);
+
+$editorBackgroundColor: var(--editorBackgroundColor);
+$editorTextColor: var(--editorTextColor);
+
+$statusBarIdle: var(--statusBarIdle);
+$statusBarError: var(--statusBarError);
+$statusBarTextColor: var(--statusBarTextColor);
