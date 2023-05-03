@@ -1,0 +1,55 @@
+@use 'sass:color';
+
+$colors:
+  #e6194b,
+  #3cb44b,
+  #ffe119,
+  #4363d8,
+  #f58231,
+  #911eb4,
+  #42d4f4,
+  #f032e6,
+  #bfef45,
+  #fabed4,
+  #469990,
+  #dcbeff,
+  #9a6324,
+  #fffac8,
+  #800000,
+  #aaffc3,
+  #808000,
+  #ffd8b1,
+  #000075,
+  #a9a9a9,
+  #ffffff,
+  #000000,
+;
+
+@for $i from 1 through length($colors) {
+  $c: nth($colors, $i);
+
+  .block-color-#{$i} {
+    background-color: color.change($c, $alpha: 0.1);
+  }
+
+  .line-color-#{$i} {
+    background-color: color.change($c, $alpha: 0.1);
+    width: 5px !important;
+    margin-left: 3px;
+  }
+
+  .inline-hover-can-inline {
+    border-bottom: 2px rgba(0, 128, 0, 0.3) dotted;
+    text-decoration: dotted;
+  }
+
+  .inline-hover-cannot-inline {
+    border-bottom: 2px rgba(128, 0, 0, 0.3) dotted;
+    text-decoration: dotted;
+  }
+
+  .inline-hover-escape {
+    border-bottom: 2px rgba(255, 0, 0, 0.3) solid;
+    text-decoration: dotted;
+  }
+}
