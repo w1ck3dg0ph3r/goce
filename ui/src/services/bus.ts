@@ -4,6 +4,9 @@ type Events = {
   editorLayoutRequested: void
   sourceLineHovered: number
   assemblyLineHovered: number
+
+  jumpToAssemblyLine: number
+  jumpToSourceLine: number
 }
 
 const bus = mitt<Events>()

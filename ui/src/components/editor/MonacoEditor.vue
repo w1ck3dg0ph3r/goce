@@ -7,7 +7,7 @@ import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 import 'monaco-editor/esm/vs/editor/editor.all'
 import 'monaco-editor/esm/vs/basic-languages/go/go.contribution'
 
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch, watchEffect } from 'vue'
 import { debounce, merge } from 'lodash'
 
 const props = defineProps<{
@@ -25,6 +25,7 @@ const emit = defineEmits<{
 }>()
 
 defineExpose({
+  getEditor,
   getValue,
   setValue,
 })
@@ -146,6 +147,10 @@ function layoutEditor() {
   }, 0)
 }
 
+function getEditor(): monaco.editor.IStandaloneCodeEditor {
+  return editor
+}
+
 function getValue(): string {
   return editor?.getModel()?.getValue() ?? ''
 }
@@ -160,7 +165,9 @@ function setValue(code: string, keepCursor: boolean = true) {
 </script>
 
 <template>
-  <div ref="$editor" class="monaco-editor"></div>
+  <div class="monaco-editor">
+    <div ref="$editor"></div>
+  </div>
 </template>
 
 <style lang="scss" scoped>
