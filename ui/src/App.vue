@@ -7,16 +7,14 @@ import StatusBar from '@/components/statusbar/StatusBar.vue'
 
 import API from '@/services/api'
 import State, { Status } from '@/state'
-import { SourceMap } from './components/editor/sourcemap'
 
 import { onMounted, ref } from 'vue'
 
 const $codeEditor = ref<InstanceType<typeof CodeEditor> | null>(null)
-const $asmView = ref<InstanceType<typeof AsmView> | null>(null)
-const $outputPane = ref<InstanceType<typeof OutputPane> | null>(null)
 
 onMounted(() => {
-  compile()
+  State.sourceMap.init()
+  compileCode()
 })
 
 async function formatCode() {
@@ -37,24 +35,21 @@ async function formatCode() {
   State.status = Status.Idle
 }
 
-async function compile() {
+async function compileCode() {
   if (State.status != Status.Idle) return
   let code = $codeEditor.value?.getCode()
   if (!code) return
 
   State.status = Status.Compiling
-  let res = await API.compile(code)
-  $asmView.value?.setAssembly(res.assembly)
-  if (res.errors) {
-    State.errorMessage = res.errors
+  let compiled = await API.compile(code)
+  if (compiled.errors) {
+    State.errorMessage = compiled.errors
     State.status = Status.Idle
     return
   } else {
     State.errorMessage = ''
   }
-  let mapping = new SourceMap(res)
-  $codeEditor.value?.setMapping(mapping)
-  $asmView.value?.setMapping(mapping)
+  State.sourceMap.update(compiled)
   State.status = Status.Idle
 }
 
@@ -85,18 +80,18 @@ func main() {
 
 <template>
   <div class="root" :class="`theme-${State.theme}`">
-    <MenuBar @format="formatCode" @build="compile"></MenuBar>
+    <MenuBar @format="formatCode" @build="compileCode"></MenuBar>
     <div class="split">
       <CodeEditor
         class="code"
         ref="$codeEditor"
-        :default-code="defaultCode"
-        @change="compile"
+        :defaultCode="defaultCode"
+        @change="compileCode"
       ></CodeEditor>
-      <AsmView class="assembly" ref="$asmView"></AsmView>
+      <AsmView class="assembly"></AsmView>
     </div>
     <div class="bottom">
-      <OutputPane ref="$outputPane"></OutputPane>
+      <OutputPane></OutputPane>
       <StatusBar></StatusBar>
     </div>
   </div>

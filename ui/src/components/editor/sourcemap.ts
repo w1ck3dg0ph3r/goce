@@ -1,11 +1,11 @@
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
-import { ref, type Ref } from 'vue'
 
 import type { CompilationResult } from '@/services/api'
 
 import './sourcemap.scss'
+import bus from '@/services/bus'
 
-export interface Mapping {
+interface Mapping {
   color: string
   colorIdx: number
   ranges: {
@@ -15,18 +15,39 @@ export interface Mapping {
 }
 
 export class SourceMap {
+  assembly: string
   map: Map<number, Mapping>
   reverseMap: Map<number, number>
-  highlightedRange: Ref<number>
   inliningAnalysis: CompilationResult['inliningAnalysis']
   heapEscapes: CompilationResult['heapEscapes']
 
-  constructor(compiled: CompilationResult) {
-    let colorIdx = 0
+  sourceDecorations: monaco.editor.IModelDeltaDecoration[]
+  assemblyDecorations: monaco.editor.IModelDeltaDecoration[]
+
+  highlightedSource?: monaco.Range
+  highlightedAssembly?: monaco.Range[]
+
+  constructor() {
+    this.assembly = ''
     this.map = new Map()
     this.reverseMap = new Map()
-    this.highlightedRange = ref(-1)
+    this.inliningAnalysis = new Array()
+    this.heapEscapes = new Array()
+    this.sourceDecorations = new Array()
+    this.assemblyDecorations = new Array()
+  }
+
+  init() {
+    bus.on('sourceLineHovered', (ln) => this.highlightFromSource(ln))
+    bus.on('assemblyLineHovered', (ln) => this.highlightFromAssembly(ln))
+  }
+
+  update(compiled: CompilationResult) {
+    this.assembly = compiled.assembly
+    this.map = new Map()
+    this.reverseMap = new Map()
     if (compiled.mapping) {
+      let colorIdx = 0
       for (const m of compiled.mapping) {
         if (!this.map.has(m.source)) {
           this.map.set(m.source, {
@@ -46,30 +67,43 @@ export class SourceMap {
 
     this.inliningAnalysis = compiled.inliningAnalysis || []
     this.heapEscapes = compiled.heapEscapes || []
+
+    this.sourceDecorations = this.getSourceBlockDecorations()
+    this.assemblyDecorations = this.getAssemblyBlockDecorations()
   }
 
   highlightFromSource(lineNumber: number) {
     if (this.map.has(lineNumber)) {
-      if (this.highlightedRange.value != lineNumber) {
-        this.highlightedRange.value = lineNumber
+      this.highlightedSource = new monaco.Range(lineNumber, 1, lineNumber, 1)
+      const asmRanges = this.map.get(lineNumber)!.ranges
+      const ranges = Array<monaco.Range>()
+      for (const r of asmRanges) {
+        ranges.push(new monaco.Range(r.start, 1, r.end, 1))
       }
-      return
+      this.highlightedAssembly = ranges
+    } else {
+      this.highlightedSource = undefined
+      this.highlightedAssembly = undefined
     }
-    this.highlightedRange.value = -1
   }
 
   highlightFromAssembly(lineNumber: number) {
     const sourceLine = this.reverseMap.get(lineNumber)
     if (sourceLine) {
-      if (this.highlightedRange.value != sourceLine) {
-        this.highlightedRange.value = sourceLine
+      this.highlightedSource = new monaco.Range(sourceLine, 1, sourceLine, 1)
+      const asmRanges = this.map.get(sourceLine)?.ranges || []
+      const ranges = Array<monaco.Range>()
+      for (const r of asmRanges) {
+        ranges.push(new monaco.Range(r.start, 1, r.end, 1))
       }
-      return
+      this.highlightedAssembly = ranges
+    } else {
+      this.highlightedSource = undefined
+      this.highlightedAssembly = undefined
     }
-    this.highlightedRange.value = -1
   }
 
-  sourceBlockDecorations(): monaco.editor.IModelDeltaDecoration[] {
+  getSourceBlockDecorations(): monaco.editor.IModelDeltaDecoration[] {
     const decs = new Array<monaco.editor.IModelDeltaDecoration>()
     for (const [lineNumber, map] of this.map) {
       decs.push({
@@ -111,7 +145,7 @@ export class SourceMap {
     return decs
   }
 
-  assemblyBlockDecorations(): monaco.editor.IModelDeltaDecoration[] {
+  getAssemblyBlockDecorations(): monaco.editor.IModelDeltaDecoration[] {
     const decs = new Array<monaco.editor.IModelDeltaDecoration>()
     for (const [, map] of this.map) {
       for (const range of map.ranges) {

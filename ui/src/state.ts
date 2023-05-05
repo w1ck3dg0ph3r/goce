@@ -1,3 +1,5 @@
+import { SourceMap } from './components/editor/sourcemap'
+
 import { reactive } from 'vue'
 
 export interface State {
@@ -6,6 +8,8 @@ export interface State {
 
   status: Status
   errorMessage: string
+
+  sourceMap: SourceMap
 }
 
 export enum Status {
@@ -14,11 +18,14 @@ export enum Status {
   Compiling,
 }
 
-export default reactive<State>({
+const State = reactive<State>({
   theme: 'light',
   selectedCompiler: '',
 
   status: Status.Idle,
   errorMessage: '',
+
+  sourceMap: new SourceMap(),
 })
 
+export default State
