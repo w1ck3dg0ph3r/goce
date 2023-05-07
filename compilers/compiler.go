@@ -19,6 +19,7 @@ type CompilerInfo struct {
 type Result struct {
 	CompilerInfo   CompilerInfo
 	SourceFilename string
+	SourceCode     []byte
 
 	BuildOutput   io.Reader
 	ObjdumpOutput io.Reader

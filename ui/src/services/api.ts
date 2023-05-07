@@ -60,24 +60,29 @@ export interface FormattedCode {
 }
 
 export interface CompilationResult {
-  assembly: string
-  mapping: {
+  assembly?: string
+  mapping?: {
     source: number
     start: number
     end: number
   }[]
-  inliningAnalysis: {
+  inliningAnalysis?: {
     name: string
     location: FileLocation
     canInline: boolean
     reason: string
     cost: number
   }[]
-  heapEscapes: {
+  inlinedCalls?: {
+    name: string
+    location: FileLocation
+    length: number
+  }[]
+  heapEscapes?: {
     name: string
     location: FileLocation
   }[]
-  errors: string
+  errors?: string
 }
 
 interface FileLocation {

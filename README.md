@@ -3,7 +3,8 @@
 **Go** **C**ompiler **E**xplorer similar to Matt Godbolt's [godbolt.org](https://godbolt.org), but lighter, easier to set up and with Go specific features.
 
 Additional features include:
-- showing inlining decisions (due to recursion, function complexity, etc.)
+- showing inlineability analysis (recursion, function complexity cost, etc.)
+- showing inlined function calls
 - showing variables that escape to heap
 
 ![Screenshot](/images/screenshot.jpg)

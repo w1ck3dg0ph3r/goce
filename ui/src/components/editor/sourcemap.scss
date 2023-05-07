@@ -1,55 +1,43 @@
 @use 'sass:color';
 
-$colors:
-  #e6194b,
-  #3cb44b,
-  #ffe119,
-  #4363d8,
-  #f58231,
-  #911eb4,
-  #42d4f4,
-  #f032e6,
-  #bfef45,
-  #fabed4,
-  #469990,
-  #dcbeff,
-  #9a6324,
-  #fffac8,
-  #800000,
-  #aaffc3,
-  #808000,
-  #ffd8b1,
-  #000075,
-  #a9a9a9,
-  #ffffff,
-  #000000,
-;
+$colors: #e6194b, #3cb44b, #ffe119, #4363d8, #f58231, #911eb4, #42d4f4, #f032e6, #bfef45, #fabed4,
+  #469990, #dcbeff, #9a6324, #fffac8, #800000, #aaffc3, #808000, #ffd8b1, #000075, #a9a9a9, #ffffff,
+  #000000;
 
 @for $i from 1 through length($colors) {
   $c: nth($colors, $i);
 
-  .block-color-#{$i} {
+  .monaco-editor .block-color-#{$i} {
     background-color: color.change($c, $alpha: 0.1);
   }
 
-  .line-color-#{$i} {
+  .monaco-editor .line-color-#{$i} {
     background-color: color.change($c, $alpha: 0.1);
     width: 5px !important;
     margin-left: 3px;
   }
 
-  .inline-hover-can-inline {
-    border-bottom: 2px rgba(0, 128, 0, 0.3) dotted;
-    text-decoration: dotted;
+  .monaco-editor .inline-hover-can-inline {
+    border-bottom: 1px #33b674 dotted;
   }
 
-  .inline-hover-cannot-inline {
-    border-bottom: 2px rgba(128, 0, 0, 0.3) dotted;
-    text-decoration: dotted;
+  .monaco-editor .inline-hover-cannot-inline {
+    border-bottom: 1px #e51400 dotted;
+  }
+
+  .monaco-editor .inline-hover-inlined-call {
+    border-bottom: 2px rgba(0, 128, 0, 0.3) solid;
+  }
+
+  .monaco-editor .inlinedcall {
+    border-bottom: 4px;
+    background: url('data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww%2Ew3%2Eorg%2F2000%2Fsvg%27%20viewBox%3D%270%200%206%203%27%20enable%2Dbackground%3D%27new%200%200%206%203%27%20height%3D%273%27%20width%3D%276%27%3E%3Cg%20fill%3D%27%2333b674%27%3E%3Cpolygon%20points%3D%275%2E5%2C0%202%2E5%2C3%201%2E1%2C3%204%2E1%2C0%27%2F%3E%3Cpolygon%20points%3D%274%2C0%206%2C2%206%2C0%2E6%205%2E4%2C0%27%2F%3E%3Cpolygon%20points%3D%270%2C2%201%2C3%202%2E4%2C3%200%2C0%2E6%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E')
+      repeat-x
+      bottom
+      left;
   }
 
   .inline-hover-escape {
-    border-bottom: 2px rgba(255, 0, 0, 0.3) solid;
-    text-decoration: dotted;
+    border-bottom: 2px #e59c00 solid;
   }
 }

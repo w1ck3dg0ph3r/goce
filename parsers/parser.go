@@ -14,6 +14,7 @@ type Result struct {
 	Assembly         string             `json:"assembly"`
 	Mapping          []Mapping          `json:"mapping"`
 	InliningAnalysis []InliningAnalysis `json:"inliningAnalysis"`
+	InlinedCalls     []InlinedCall      `json:"inlinedCalls"`
 	HeapEscapes      []HeapEscape       `json:"heapEscapes"`
 }
 
@@ -29,6 +30,12 @@ type InliningAnalysis struct {
 	CanInline bool     `json:"canInline"`
 	Reason    string   `json:"reason"`
 	Cost      int      `json:"cost"`
+}
+
+type InlinedCall struct {
+	Name     string   `json:"name"`
+	Location Location `json:"location"`
+	Length   int      `json:"length"`
 }
 
 type HeapEscape struct {

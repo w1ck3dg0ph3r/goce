@@ -18,8 +18,6 @@ export class SourceMap {
   assembly: string
   map: Map<number, Mapping>
   reverseMap: Map<number, number>
-  inliningAnalysis: CompilationResult['inliningAnalysis']
-  heapEscapes: CompilationResult['heapEscapes']
 
   sourceDecorations: monaco.editor.IModelDeltaDecoration[]
   assemblyDecorations: monaco.editor.IModelDeltaDecoration[]
@@ -31,8 +29,6 @@ export class SourceMap {
     this.assembly = ''
     this.map = new Map()
     this.reverseMap = new Map()
-    this.inliningAnalysis = new Array()
-    this.heapEscapes = new Array()
     this.sourceDecorations = new Array()
     this.assemblyDecorations = new Array()
   }
@@ -43,7 +39,7 @@ export class SourceMap {
   }
 
   update(compiled: CompilationResult) {
-    this.assembly = compiled.assembly
+    this.assembly = compiled.assembly || ''
     this.map = new Map()
     this.reverseMap = new Map()
     if (compiled.mapping) {
@@ -65,10 +61,7 @@ export class SourceMap {
       }
     }
 
-    this.inliningAnalysis = compiled.inliningAnalysis || []
-    this.heapEscapes = compiled.heapEscapes || []
-
-    this.sourceDecorations = this.getSourceBlockDecorations()
+    this.sourceDecorations = this.getSourceBlockDecorations(compiled)
     this.assemblyDecorations = this.getAssemblyBlockDecorations()
   }
 
@@ -103,7 +96,7 @@ export class SourceMap {
     }
   }
 
-  getSourceBlockDecorations(): monaco.editor.IModelDeltaDecoration[] {
+  getSourceBlockDecorations(compiled: CompilationResult): monaco.editor.IModelDeltaDecoration[] {
     const decs = new Array<monaco.editor.IModelDeltaDecoration>()
     for (const [lineNumber, map] of this.map) {
       decs.push({
@@ -114,34 +107,56 @@ export class SourceMap {
         },
       })
     }
-    for (const fc of this.inliningAnalysis) {
-      const [line, column] = [fc.location.l, fc.location.c]
-      const decoration = {
-        range: new monaco.Range(line, column, line, column + fc.name.length),
-        options: {
-          hoverMessage: [
-            { value: `# \`${fc.name}\` ${fc.canInline ? 'can' : 'cannot'} be inlined` },
-          ],
-          inlineClassName: fc.canInline ? 'inline-hover-can-inline' : 'inline-hover-cannot-inline',
-        },
+
+    if (compiled.inliningAnalysis) {
+      for (const fc of compiled.inliningAnalysis) {
+        const [line, column] = [fc.location.l, fc.location.c]
+        const decoration = {
+          range: new monaco.Range(line, column, line, column + fc.name.length),
+          options: {
+            hoverMessage: [
+              { value: `\`${fc.name}\` ${fc.canInline ? 'can' : 'cannot'} be inlined` },
+            ],
+            inlineClassName: fc.canInline ? 'inline-hover-can-inline' : 'inline-hover-cannot-inline',
+          },
+        }
+        if (fc.canInline) {
+          decoration.options.hoverMessage.push({ value: `cost: ${fc.cost}` })
+        } else {
+          decoration.options.hoverMessage.push({ value: fc.reason })
+        }
+        decs.push(decoration)
       }
-      if (fc.canInline) {
-        decoration.options.hoverMessage.push({ value: `cost: ${fc.cost}` })
-      } else {
-        decoration.options.hoverMessage.push({ value: fc.reason })
+    }
+
+    if (compiled.inlinedCalls) {
+      for (const ic of compiled.inlinedCalls) {
+        const [line, column] = [ic.location.l, ic.location.c]
+        decs.push({
+          range: new monaco.Range(line, column, line, column + ic.length),
+          options: {
+            hoverMessage: [{ value: `inlining call to \`${ic.name}\`` }],
+            // inlineClassName: 'inline-hover-inlined-call',
+            className: 'inlinedcall',
+            // className: 'squiggly-error',
+          },
+        })
       }
-      decs.push(decoration)
     }
-    for (const he of this.heapEscapes) {
-      const [line, column] = [he.location.l, he.location.c]
-      decs.push({
-        range: new monaco.Range(line, column, line, column + he.name.length),
-        options: {
-          hoverMessage: { value: `\`${he.name}\` escapes to heap` },
-          inlineClassName: 'inline-hover-escape',
-        },
-      })
+
+    if (compiled.heapEscapes) {
+      for (const he of compiled.heapEscapes) {
+        const [line, column] = [he.location.l, he.location.c]
+        decs.push({
+          range: new monaco.Range(line, column, line, column + he.name.length),
+          options: {
+            hoverMessage: { value: `\`${he.name}\` escapes to heap` },
+            inlineClassName: 'inline-hover-escape',
+          },
+        })
+      }
     }
+
     return decs
   }
 

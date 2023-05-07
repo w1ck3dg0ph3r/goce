@@ -48,6 +48,7 @@ func (c *localCompiler) Compile(code []byte) (Result, error) {
 	res := Result{
 		CompilerInfo:   c.info,
 		SourceFilename: mainFilename,
+		SourceCode:     code,
 		BuildOutput:    buildOutput,
 		ObjdumpOutput:  objdumpOutput,
 	}

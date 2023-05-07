@@ -57,6 +57,7 @@ const defaultCode = `package main
 
 import (
 	"fmt"
+	"math"
 )
 
 func fibonacci(n int) int {
@@ -70,9 +71,14 @@ func square(n int) int {
 	return n * n
 }
 
+func sqrt(x float32) float32 {
+	return float32(math.Sqrt(float64(x)))
+}
+
 func main() {
 	res := fibonacci(3)
 	fmt.Println(res)
+	fmt.Println(sqrt(float32(res)))
 	fmt.Println(square(res))
 }
 `

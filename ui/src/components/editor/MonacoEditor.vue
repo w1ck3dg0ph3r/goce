@@ -7,7 +7,7 @@ import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 import 'monaco-editor/esm/vs/editor/editor.all'
 import 'monaco-editor/esm/vs/basic-languages/go/go.contribution'
 
-import { computed, onMounted, onUnmounted, ref, watch, watchEffect } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { debounce, merge } from 'lodash'
 
 const props = defineProps<{
@@ -142,8 +142,10 @@ function createEditor() {
 function layoutEditor() {
   editor.layout({ width: 0, height: 0 })
   setTimeout(() => {
-    const rect = $editor.value!.parentElement!.getBoundingClientRect()
-    editor.layout({ width: rect.width, height: rect.height })
+    const rect = $editor.value?.parentElement?.getBoundingClientRect()
+    if (rect) {
+      editor.layout({ width: rect.width, height: rect.height })
+    }
   }, 0)
 }
 
