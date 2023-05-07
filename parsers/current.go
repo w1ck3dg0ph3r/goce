@@ -150,7 +150,7 @@ func parseObjdumpOutput(res *Result, output io.Reader) {
 			assemblyLine++
 			if bytes.Equal(match[reAssembly_File], mainFilenameBytes) {
 				lineNumber, _ := strconv.Atoi(string(match[reAssembly_Line]))
-				if lineNumber > lastSourceLine {
+				if lineNumber != lastSourceLine {
 					res.Mapping = append(res.Mapping, Mapping{
 						SourceLine:    lineNumber,
 						AssemblyStart: assemblyLine,
