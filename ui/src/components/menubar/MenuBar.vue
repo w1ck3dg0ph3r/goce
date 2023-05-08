@@ -2,9 +2,10 @@
 import API, { type CompilerInfo } from '@/services/api'
 import State from '@/state'
 
-import { onMounted, reactive } from 'vue'
+import { computed, onMounted, reactive } from 'vue'
 import GoceLogo from './GoceLogo.vue'
 import MenuButton from './MenuButton.vue'
+import DropDown from './DropDown.vue'
 
 import '@vscode/codicons/dist/codicon.css'
 
@@ -21,6 +22,13 @@ onMounted(async () => {
   }
 })
 
+const compilerOptions = computed(() => {
+  return state.compilers.map((c) => ({
+    value: c.name,
+    text: c.name,
+  }))
+})
+
 function switchTheme() {
   State.theme = State.theme == 'light' ? 'dark' : 'light'
 }
@@ -31,12 +39,13 @@ function switchTheme() {
     <GoceLogo class="logo"></GoceLogo>
     <div class="spacer"></div>
     <MenuButton @click="switchTheme">
-      <i class="codicon codicon-color-mode"></i>
+      <i
+        class="codicon codicon-color-mode"
+        :style="{ transform: State.theme == 'dark' ? `rotate(180deg)` : undefined }"
+      ></i>
       <span>{{ State.theme == 'light' ? 'Dark' : 'Light' }}</span>
     </MenuButton>
-    <select v-model="State.selectedCompiler">
-      <option v-for="c of state.compilers" :key="c.name" :value="c.name">{{ c.name }}</option>
-    </select>
+    <DropDown v-model="State.selectedCompiler" :options="compilerOptions"></DropDown>
     <MenuButton @click="$emit('format')">
       <i class="codicon codicon-json"></i>
       <span>Format</span>

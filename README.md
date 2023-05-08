@@ -7,7 +7,7 @@ Additional features include:
 - showing inlined function calls
 - showing variables that escape to heap
 
-![Screenshot](/images/screenshot.jpg)
+![Screenshot](/images/screenshot.webp)
 
 ## Building Local Version
 

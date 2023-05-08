@@ -3,7 +3,9 @@
 
   --backgroundColor: #f7f7f7;
   --textColor: #efefef;
-  --buttonColor: #007acc;
+  --buttonColor: #338eca;
+  --buttonColorHover: #007acc;
+  --buttonColorFocus: #256e9e;
 
   --editorBackgroundColor: #ffffff;
   --editorTextColor: #111111;
@@ -19,6 +21,8 @@
   --backgroundColor: #2d2d2d;
   --textColor: #c7c7c7;
   --buttonColor: #3d3d3d;
+  --buttonColorHover: #4b4b4b;
+  --buttonColorFocus: #6e6e6e;
 
   --editorBackgroundColor: #1e1e1e;
   --editorTextColor: #d6d6d6;
@@ -33,6 +37,8 @@ $logoColor: var(--logoColor);
 $backgroundColor: var(--backgroundColor);
 $textColor: var(--textColor);
 $buttonColor: var(--buttonColor);
+$buttonColorHover: var(--buttonColorHover);
+$buttonColorFocus: var(--buttonColorFocus);
 
 $editorBackgroundColor: var(--editorBackgroundColor);
 $editorTextColor: var(--editorTextColor);

@@ -16,15 +16,15 @@
   align-items: center;
   gap: 0.2rem;
 
-  border: none;
+  border: 1px solid rgba(0, 0, 0, 0);
   border-radius: 3px;
   background-color: theme.$buttonColor;
-  opacity: 0.7;
   &:hover {
-    opacity: 1;
+    background-color: theme.$buttonColorHover;
   }
   &:focus {
-    outline: 2px solid theme.$buttonColor;
+    border: 1px solid theme.$buttonColorFocus;
+    outline: none;
   }
 
   color: theme.$textColor;
