@@ -15,14 +15,8 @@ const $codeEditor = ref<InstanceType<typeof CodeEditor> | null>(null)
 onMounted(() => {
   State.sourceMap.init()
   compileCode()
+  useRecompileOnCompilerChange()
 })
-
-watch(
-  () => State.selectedCompiler,
-  () => {
-    compileCode()
-  }
-)
 
 async function formatCode() {
   if (State.status != Status.Idle) return
@@ -30,16 +24,21 @@ async function formatCode() {
   if (!code) return
 
   State.status = Status.Formatting
-  let res = await API.formatCode(code, State.selectedCompiler)
-  if (res.code !== '') {
-    $codeEditor.value?.setCode(res.code, true)
+  try {
+    let res = await API.formatCode(code, State.selectedCompiler)
+    if (res.code !== '') {
+      $codeEditor.value?.setCode(res.code, true)
+    }
+    if (res.errors) {
+      State.setError(res.errors)
+    } else {
+      State.clearErrors()
+    }
+  } catch (e) {
+    State.appendError('cannot format code')
+  } finally {
+    State.status = Status.Idle
   }
-  if (res.errors) {
-    State.errorMessage = res.errors
-  } else {
-    State.errorMessage = ''
-  }
-  State.status = Status.Idle
 }
 
 async function compileCode() {
@@ -48,16 +47,30 @@ async function compileCode() {
   if (!code) return
 
   State.status = Status.Compiling
-  let compiled = await API.compile(code, State.selectedCompiler)
-  if (compiled.errors) {
-    State.errorMessage = compiled.errors
+  try {
+    let compiled = await API.compile(code, State.selectedCompiler)
+    if (compiled.errors) {
+      State.setError(compiled.errors)
+      State.status = Status.Idle
+      return
+    } else {
+      State.clearErrors()
+    }
+    State.sourceMap.update(compiled)
+  } catch (e) {
+    State.appendError('cannot compile code')
+  } finally {
     State.status = Status.Idle
-    return
-  } else {
-    State.errorMessage = ''
   }
-  State.sourceMap.update(compiled)
-  State.status = Status.Idle
+}
+
+function useRecompileOnCompilerChange() {
+  return watch(
+    () => State.selectedCompiler,
+    () => {
+      compileCode()
+    }
+  )
 }
 
 const defaultCode = `package main

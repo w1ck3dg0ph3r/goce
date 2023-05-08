@@ -13,8 +13,12 @@ const state = reactive({
 })
 
 onMounted(async () => {
-  state.compilers = await API.listCompilers()
-  if (state.compilers.length > 0) State.selectedCompiler = state.compilers[0].name
+  try {
+    state.compilers = await API.listCompilers()
+    if (state.compilers.length > 0) State.selectedCompiler = state.compilers[0].name
+  } catch (e) {
+    State.appendError('cannot get compilers')
+  }
 })
 
 function switchTheme() {
