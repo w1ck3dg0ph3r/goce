@@ -1,5 +1,5 @@
 export class API {
-  readonly baseUrl: string = 'http://127.0.0.1:9000'
+  readonly baseUrl: string = import.meta.env.VITE_APP_API_BASE_URL
 
   constructor(baseUrl?: string) {
     if (baseUrl) {
