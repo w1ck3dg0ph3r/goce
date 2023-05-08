@@ -1,8 +1,9 @@
 package parsers
 
 import (
-	"strings"
+	"fmt"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/w1ck3dg0ph3r/goce/compilers"
 )
 
@@ -49,10 +50,15 @@ type Location struct {
 }
 
 func FindMatching(output compilers.Result) Parser {
+	ver, err := semver.NewVersion(output.CompilerInfo.Version)
+	if err != nil {
+		panic(fmt.Sprintf("incorrect compiler version: %s", output.CompilerInfo.Version))
+	}
+	lastSupported := semver.MustParse("1.18")
 	switch {
-	case strings.HasPrefix(output.CompilerInfo.Version, "1.20"):
+	case ver.GreaterThan(lastSupported):
 		return currentParser{}
 	default:
-		return currentParser{}
+		return nil
 	}
 }

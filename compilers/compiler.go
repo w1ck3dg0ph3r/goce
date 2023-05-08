@@ -2,7 +2,11 @@ package compilers
 
 import (
 	"io"
+	"os"
 	"os/exec"
+	"path/filepath"
+	"sort"
+	"strings"
 )
 
 type Compiler interface {
@@ -59,6 +63,7 @@ var (
 
 func init() {
 	registerGoFromPath()
+	registerGoFromHomeSdk()
 	if len(compilers) > 0 {
 		defaultCompiler = compilers[0]
 	}
@@ -76,4 +81,29 @@ func registerGoFromPath() {
 	}
 	compilers = append(compilers, comp)
 	compilerByName[info.Name] = comp
+}
+
+func registerGoFromHomeSdk() {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return
+	}
+	goSdkDir := filepath.Join(homeDir, "sdk")
+	entries, err := os.ReadDir(goSdkDir)
+	if err != nil {
+		return
+	}
+	sort.Slice(entries, func(i, j int) bool { return entries[i].Name() > entries[j].Name() })
+	for _, e := range entries {
+		if !e.IsDir() || !strings.HasPrefix(e.Name(), "go") {
+			continue
+		}
+		comp := &localCompiler{GoPath: filepath.Join(goSdkDir, e.Name(), "bin", "go")}
+		info, err := comp.Info()
+		if err != nil {
+			continue
+		}
+		compilers = append(compilers, comp)
+		compilerByName[info.Name] = comp
+	}
 }

@@ -116,6 +116,16 @@ func parseBuildOutput(res *Result, sourceCode []byte, output io.Reader) {
 				}
 				res.HeapEscapes = append(res.HeapEscapes, he)
 			}
+
+			// Go versions prior to 1.20 seem to report column-1 for heap escapes
+			if bytes.HasPrefix(line[location.Column:], name) {
+				location.Column += 1
+				he := HeapEscape{
+					Name:     string(match[reEscapesToHeap_Name]),
+					Location: locationToUnicode(sourceLines, location),
+				}
+				res.HeapEscapes = append(res.HeapEscapes, he)
+			}
 		}
 	}
 }

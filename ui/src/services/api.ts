@@ -15,13 +15,14 @@ export class API {
     return await res.json()
   }
 
-  async formatCode(code: string): Promise<FormattedCode> {
+  async formatCode(code: string, compilerName?: string): Promise<FormattedCode> {
     const res = await fetch(`${this.baseUrl}/api/format`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
+        name: compilerName,
         code: code,
       }),
     })
@@ -31,13 +32,14 @@ export class API {
     return await res.json()
   }
 
-  async compile(code: string): Promise<CompilationResult> {
+  async compile(code: string, compilerName?: string): Promise<CompilationResult> {
     const res = await fetch(`${this.baseUrl}/api/compile`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
+        name: compilerName,
         code: code,
       }),
     })

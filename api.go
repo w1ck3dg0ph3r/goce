@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/gofiber/fiber/v2"
 	"mvdan.cc/gofumpt/format"
 
@@ -36,7 +37,7 @@ func (api *API) Format(ctx *fiber.Ctx) error {
 	}
 
 	formattedCode, err := format.Source([]byte(req.Code), format.Options{
-		LangVersion: "1.20",
+		LangVersion: gofumptVersionForCompiler(req.Name),
 		ExtraRules:  true,
 	})
 	res := Response{
@@ -69,7 +70,7 @@ func (api *API) Compile(ctx *fiber.Ctx) error {
 		compiler = compilers.Get(req.Name)
 	}
 	if compiler == nil {
-		return fiber.ErrNotFound
+		return fiber.NewError(fiber.StatusNotFound, "compiler not found: ", req.Name)
 	}
 
 	compRes, err := compiler.Compile([]byte(req.Code))
@@ -81,9 +82,33 @@ func (api *API) Compile(ctx *fiber.Ctx) error {
 	}
 
 	parser := parsers.FindMatching(compRes)
+	if parser == nil {
+		return fiber.NewError(fiber.StatusNotFound, "parser not found for go version: ", compRes.CompilerInfo.Version)
+	}
 	parseRes := parser.Parse(compRes)
 
 	return ctx.JSON(Response{
 		Result: &parseRes,
 	})
+}
+
+func gofumptVersionForCompiler(name string) string {
+	const defaultVeriosn = "1.20"
+
+	if name == "" {
+		return defaultVeriosn
+	}
+	compiler := compilers.Get(name)
+	if compiler == nil {
+		return defaultVeriosn
+	}
+	info, err := compiler.Info()
+	if err != nil {
+		return defaultVeriosn
+	}
+	ver, err := semver.NewVersion(info.Version)
+	if err != nil {
+		return defaultVeriosn
+	}
+	return fmt.Sprintf("%d.%d", ver.Major(), ver.Minor())
 }

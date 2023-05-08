@@ -8,7 +8,7 @@ import StatusBar from '@/components/statusbar/StatusBar.vue'
 import API from '@/services/api'
 import State, { Status } from '@/state'
 
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 
 const $codeEditor = ref<InstanceType<typeof CodeEditor> | null>(null)
 
@@ -17,13 +17,20 @@ onMounted(() => {
   compileCode()
 })
 
+watch(
+  () => State.selectedCompiler,
+  () => {
+    compileCode()
+  }
+)
+
 async function formatCode() {
   if (State.status != Status.Idle) return
   let code = $codeEditor.value?.getCode()
   if (!code) return
 
   State.status = Status.Formatting
-  let res = await API.formatCode(code)
+  let res = await API.formatCode(code, State.selectedCompiler)
   if (res.code !== '') {
     $codeEditor.value?.setCode(res.code, true)
   }
@@ -41,7 +48,7 @@ async function compileCode() {
   if (!code) return
 
   State.status = Status.Compiling
-  let compiled = await API.compile(code)
+  let compiled = await API.compile(code, State.selectedCompiler)
   if (compiled.errors) {
     State.errorMessage = compiled.errors
     State.status = Status.Idle
