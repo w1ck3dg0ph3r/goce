@@ -1,13 +1,17 @@
-<script setup lang="ts">
-import bus from '@/services/bus'
-import '@/components/editor/environment'
-import '@/components/editor/plan9asm'
-
-import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
+<script lang="ts">
 import 'monaco-editor/esm/vs/editor/editor.all'
 import 'monaco-editor/esm/vs/basic-languages/go/go.contribution'
 
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import '@/components/editor/environment'
+import '@/components/editor/plan9asm'
+</script>
+
+<script setup lang="ts">
+import bus from '@/services/bus'
+
+import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
+
+import { computed, onMounted, onUnmounted, ref, watchEffect, type WatchStopHandle } from 'vue'
 import { debounce, merge } from 'lodash'
 
 const props = defineProps<{
@@ -20,8 +24,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (ev: 'change', code: string): void
-  (ev: 'hover', line: number): void
+  (event: 'change', code: string): void
+  (event: 'hover', line: number): void
 }>()
 
 defineExpose({
@@ -36,16 +40,53 @@ let decorations: monaco.editor.IEditorDecorationsCollection
 let highlightDecorations: monaco.editor.IEditorDecorationsCollection
 let hoveredLine = -1
 
+const unsubscribeHandlers = new Array<WatchStopHandle>()
+
 onMounted(() => {
   createEditor()
   layoutEditor()
+
+  unsubscribeHandlers.push(
+    watchEffect(() => {
+      editor.updateOptions({ theme: editorTheme.value })
+    })
+  )
+
+  unsubscribeHandlers.push(
+    watchEffect(() => {
+      decorations.set(props.decorations || [])
+    })
+  )
+
+  unsubscribeHandlers.push(
+    watchEffect(() => {
+      highlightDecorations.set(
+        (props.highlights || []).map((range) => ({
+          range: range,
+          options: {
+            isWholeLine: true,
+            linesDecorationsClassName: 'line-highlight',
+            blockClassName: 'block-highlight',
+          },
+        }))
+      )
+    })
+  )
+
+  unsubscribeHandlers.push(
+    watchEffect(() => {
+      if (props.options) editor.updateOptions(props.options)
+    })
+  )
 })
 
 onUnmounted(() => {
+  for (let stop of unsubscribeHandlers) stop()
+  unsubscribeHandlers.splice(0)
   editor.dispose()
 })
 
-const editorTheme = computed(() => {
+const editorTheme = computed((): string => {
   switch (props.theme) {
     case 'light':
       return 'vs'
@@ -56,56 +97,10 @@ const editorTheme = computed(() => {
   }
 })
 
-watch(editorTheme, (newTheme) => {
-  editor.updateOptions({
-    theme: newTheme,
-  })
-})
-
-watch(
-  () => props.decorations,
-  (newDecorations) => {
-    if (!newDecorations) {
-      decorations.clear()
-      return
-    }
-    decorations.set(newDecorations)
-  }
-)
-
-watch(
-  () => props.highlights,
-  (ranges) => {
-    if (!ranges) {
-      highlightDecorations.clear()
-      return
-    }
-    highlightDecorations.set(
-      ranges.map((range) => ({
-        range: range,
-        options: {
-          isWholeLine: true,
-          linesDecorationsClassName: 'line-highlight',
-          blockClassName: 'block-highlight',
-        },
-      }))
-    )
-  }
-)
-
-watch(
-  () => props.options,
-  (newOptions) => {
-    if (newOptions) {
-      editor.updateOptions(newOptions)
-    }
-  }
-)
-
 function createEditor() {
   let options: monaco.editor.IStandaloneEditorConstructionOptions = {
     value: props.value,
-    theme: editorTheme.value,
+    theme: 'vs-dark',
     language: props.language,
     insertSpaces: false,
     tabSize: 2,
@@ -136,7 +131,9 @@ function createEditor() {
 
   const debounced = debounce(layoutEditor, 300)
   window.addEventListener('resize', debounced)
+  unsubscribeHandlers.push(() => window.removeEventListener('resize', debounced))
   bus.on('editorLayoutRequested', layoutEditor)
+  unsubscribeHandlers.push(() => bus.off('editorLayoutRequested', layoutEditor))
 }
 
 function layoutEditor() {
@@ -167,7 +164,7 @@ function setValue(code: string, keepCursor: boolean = true) {
 </script>
 
 <template>
-  <div class="monaco-editor">
+  <div class="code-editor">
     <div ref="$editor"></div>
   </div>
 </template>
@@ -175,7 +172,7 @@ function setValue(code: string, keepCursor: boolean = true) {
 <style lang="scss" scoped>
 @use 'sass:color';
 
-.monaco-editor {
+.code-editor {
   overflow: hidden;
 
   :deep(.line-highlight) {
