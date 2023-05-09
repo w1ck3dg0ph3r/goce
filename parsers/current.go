@@ -193,20 +193,6 @@ func indentLevel(line []byte) int {
 	return level / 2
 }
 
-func hasSuffix(s []rune, suffix []rune) bool {
-	sLen := len(s)
-	suffixLen := len(suffix)
-	if sLen < suffixLen {
-		return false
-	}
-	for i, j := sLen-1, suffixLen-1; i >= 0 && j >= 0; i, j = i-1, j-1 {
-		if s[i] != suffix[j] {
-			return false
-		}
-	}
-	return true
-}
-
 func suffixWordLength(s []byte) int {
 	blen := len(s)
 	for p := blen - 1; p >= 0; p-- {

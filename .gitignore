@@ -2,3 +2,5 @@
 /ui/node_modules/
 
 /goce
+/__debug_bin
+/*.db

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/Masterminds/semver/v3"
+
 	"github.com/w1ck3dg0ph3r/goce/compilers"
 )
 

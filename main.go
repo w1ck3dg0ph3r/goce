@@ -21,7 +21,7 @@ var distFS embed.FS
 
 func main() {
 	app := fiber.New(fiber.Config{
-		AppName:       "GOCE v0.0.1",
+		AppName:       "GoCE v0.0.1",
 		CaseSensitive: true,
 		StrictRouting: true,
 		ReadTimeout:   3 * time.Second,
@@ -33,7 +33,15 @@ func main() {
 	app.Use(logger.New())
 	app.Use(compress.New())
 
-	api := &API{}
+	compilationCache, err := NewCompilationCache("cache.db")
+	if err != nil {
+		fmt.Printf("compilation cahce: %v", err.Error())
+		os.Exit(1)
+	}
+
+	api := &API{
+		CompilationCache: compilationCache,
+	}
 
 	app.Get("/api/compilers", api.GetCompilers)
 	app.Post("/api/format", api.Format)
@@ -41,18 +49,22 @@ func main() {
 
 	app.Use("/", serveUI())
 
-	sigCh := make(chan os.Signal)
+	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+	doneCh := make(chan struct{})
 	go func() {
 		<-sigCh
 		fmt.Printf("shutdown signal received, terminating...\n")
 		if err := app.Shutdown(); err != nil {
 			fmt.Printf("shutdown: %v\n", err)
 		}
+		compilationCache.Close()
+		doneCh <- struct{}{}
 	}()
 	if err := app.Listen(":9000"); err != nil {
 		fmt.Printf("error: %v\n", err)
 	}
+	<-doneCh
 }
 
 func serveUI() fiber.Handler {

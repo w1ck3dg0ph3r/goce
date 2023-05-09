@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/gofiber/fiber/v2"
@@ -12,12 +13,18 @@ import (
 	"github.com/w1ck3dg0ph3r/goce/parsers"
 )
 
-type API struct{}
+type API struct {
+	CompilationCache *CompilationCache
+}
+
+const (
+	CompilationCacheTTL = 2 * time.Hour
+)
 
 func (api *API) GetCompilers(ctx *fiber.Ctx) error {
 	type CompilersResponse []compilers.CompilerInfo
 	list := compilers.List()
-	return ctx.JSON(list)
+	return ctx.JSON(CompilersResponse(list))
 }
 
 func (api *API) Format(ctx *fiber.Ctx) error {
@@ -64,6 +71,14 @@ func (api *API) Compile(ctx *fiber.Ctx) error {
 	if err := ctx.BodyParser(&req); err != nil {
 		return err
 	}
+	code := []byte(req.Code)
+
+	var cacheValue CompilationCacheValue
+	if api.CompilationCache.Get(CompilationCacheKey{CompilerName: req.Name, Code: code}, &cacheValue) {
+		return ctx.JSON(Response{
+			Result: &cacheValue,
+		})
+	}
 
 	compiler := compilers.Default()
 	if req.Name != "" {
@@ -73,7 +88,7 @@ func (api *API) Compile(ctx *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, "compiler not found: ", req.Name)
 	}
 
-	compRes, err := compiler.Compile([]byte(req.Code))
+	compRes, err := compiler.Compile(code)
 	if err != nil {
 		output, _ := io.ReadAll(compRes.BuildOutput)
 		return ctx.JSON(Response{
@@ -86,6 +101,14 @@ func (api *API) Compile(ctx *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, "parser not found for go version: ", compRes.CompilerInfo.Version)
 	}
 	parseRes := parser.Parse(compRes)
+
+	if err := api.CompilationCache.Set(
+		CompilationCacheKey{CompilerName: compRes.CompilerInfo.Name, Code: code},
+		&parseRes,
+		CompilationCacheTTL,
+	); err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
 
 	return ctx.JSON(Response{
 		Result: &parseRes,

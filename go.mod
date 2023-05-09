@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/gofiber/fiber/v2 v2.45.0
+	go.etcd.io/bbolt v1.3.7
 	mvdan.cc/gofumpt v0.5.0
 )
 
