@@ -45,7 +45,7 @@ func New[K Key, V any](filename string) (*Cache[K, V], error) {
 	return cache, nil
 }
 
-func (cache *Cache[K, V]) Get(k K, v *V) bool {
+func (cache *Cache[K, V]) Get(k K, v *V) (bool, error) {
 	found := false
 	err := cache.db.View(func(tx *bbolt.Tx) error {
 		b := tx.Bucket(bucketName)
@@ -53,21 +53,26 @@ func (cache *Cache[K, V]) Get(k K, v *V) bool {
 		value := b.Get(key)
 		found = value != nil
 		if found {
-			unmarshal(value, v)
+			if err := unmarshal(value, v); err != nil {
+				return err
+			}
 		}
 		return nil
 	})
 	if err != nil {
-		return false
+		return false, err
 	}
-	return found
+	return found, nil
 }
 
-func (cache *Cache[K, V]) Set(k Key, v *V, ttl time.Duration) error {
+func (cache *Cache[K, V]) Set(k Key, v V, ttl time.Duration) error {
 	err := cache.db.Update(func(tx *bbolt.Tx) error {
 		b := tx.Bucket(bucketName)
 		key := k.Hash()
-		value := marshal(v)
+		value, err := marshal(v)
+		if err != nil {
+			return err
+		}
 		if err := b.Put(key[:], value); err != nil {
 			return err
 		}
@@ -176,18 +181,19 @@ var (
 	ttlBucketName = []byte("t")
 )
 
-func marshal(e any) []byte {
+func marshal(e any) ([]byte, error) {
 	b := &bytes.Buffer{}
 	w := gob.NewEncoder(b)
 	if err := w.Encode(e); err != nil {
-		panic(err)
+		return nil, err
 	}
-	return b.Bytes()
+	return b.Bytes(), nil
 }
 
-func unmarshal(b []byte, e any) {
+func unmarshal(b []byte, e any) error {
 	r := gob.NewDecoder(bytes.NewReader(b))
 	if err := r.Decode(e); err != nil {
-		panic(err)
+		return err
 	}
+	return nil
 }

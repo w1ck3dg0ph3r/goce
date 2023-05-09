@@ -13,7 +13,10 @@ type CompilationCacheKey struct {
 	Code         []byte
 }
 
-type CompilationCacheValue = parsers.Result
+type CompilationCacheValue struct {
+	Result parsers.Result
+	Errors string
+}
 
 type CompilationCache = cache.Cache[CompilationCacheKey, CompilationCacheValue]
 

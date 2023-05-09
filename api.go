@@ -74,10 +74,17 @@ func (api *API) Compile(ctx *fiber.Ctx) error {
 	code := []byte(req.Code)
 
 	var cacheValue CompilationCacheValue
-	if api.CompilationCache.Get(CompilationCacheKey{CompilerName: req.Name, Code: code}, &cacheValue) {
+	if found, err := api.CompilationCache.Get(CompilationCacheKey{CompilerName: req.Name, Code: code}, &cacheValue); found {
+		if cacheValue.Errors != "" {
+			return ctx.JSON(Response{
+				Errors: cacheValue.Errors,
+			})
+		}
 		return ctx.JSON(Response{
-			Result: &cacheValue,
+			Result: &cacheValue.Result,
 		})
+	} else if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
 	compiler := compilers.Default()
@@ -91,8 +98,16 @@ func (api *API) Compile(ctx *fiber.Ctx) error {
 	compRes, err := compiler.Compile(code)
 	if err != nil {
 		output, _ := io.ReadAll(compRes.BuildOutput)
+		errors := fmt.Sprintf("%s\n%s", output, err.Error())
+		if err := api.CompilationCache.Set(
+			CompilationCacheKey{CompilerName: compRes.CompilerInfo.Name, Code: code},
+			CompilationCacheValue{Errors: errors},
+			CompilationCacheTTL,
+		); err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		}
 		return ctx.JSON(Response{
-			Errors: fmt.Sprintf("%s\n%s", output, err.Error()),
+			Errors: errors,
 		})
 	}
 
@@ -104,7 +119,7 @@ func (api *API) Compile(ctx *fiber.Ctx) error {
 
 	if err := api.CompilationCache.Set(
 		CompilationCacheKey{CompilerName: compRes.CompilerInfo.Name, Code: code},
-		&parseRes,
+		CompilationCacheValue{Result: parseRes},
 		CompilationCacheTTL,
 	); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
