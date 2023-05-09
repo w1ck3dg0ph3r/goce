@@ -12,6 +12,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/etag"
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 )
@@ -32,6 +33,7 @@ func main() {
 	app.Use(cors.New())
 	app.Use(logger.New())
 	app.Use(compress.New())
+	app.Use(etag.New(etag.Config{Weak: true}))
 
 	compilationCache, err := NewCompilationCache("cache.db")
 	if err != nil {
