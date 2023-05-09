@@ -37,17 +37,26 @@ func main() {
 
 	compilationCache, err := NewCompilationCache("cache.db")
 	if err != nil {
-		fmt.Printf("compilation cahce: %v", err.Error())
+		fmt.Printf("compilation cache: %v", err.Error())
+		os.Exit(1)
+	}
+
+	sharedCodeStore, err := NewSharedStore("shared.db")
+	if err != nil {
+		fmt.Printf("shared code store: %v", err.Error())
 		os.Exit(1)
 	}
 
 	api := &API{
 		CompilationCache: compilationCache,
+		SharedCodeStore:  sharedCodeStore,
 	}
 
 	app.Get("/api/compilers", api.GetCompilers)
 	app.Post("/api/format", api.Format)
 	app.Post("/api/compile", api.Compile)
+	app.Post("/api/shared", api.ShareCode)
+	app.Get("/api/shared/:id", api.GetSharedCode)
 
 	app.Use("/", serveUI())
 
@@ -71,9 +80,10 @@ func main() {
 
 func serveUI() fiber.Handler {
 	return filesystem.New(filesystem.Config{
-		Root:       http.FS(distFS),
-		PathPrefix: "ui/dist",
-		Index:      "/index.html",
-		MaxAge:     60,
+		Root:         http.FS(distFS),
+		PathPrefix:   "ui/dist",
+		Index:        "index.html",
+		NotFoundFile: "ui/dist/index.html",
+		MaxAge:       60,
 	})
 }
