@@ -15,6 +15,15 @@ watch(visible, () => {
     }
   })
 })
+
+watch(
+  () => State.errorMessage,
+  () => {
+    if ($textArea.value) {
+      $textArea.value.scrollTop = $textArea.value.scrollHeight
+    }
+  }
+)
 </script>
 
 <template>
@@ -31,9 +40,12 @@ watch(visible, () => {
   &.hidden {
     display: none;
   }
+
   padding-top: 0.5rem;
+
   > textarea {
     background-color: theme.$editorBackgroundColor;
+    @include theme.font(code);
     color: theme.$editorTextColor;
     outline: none;
     border: none;

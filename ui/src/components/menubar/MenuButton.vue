@@ -7,14 +7,18 @@
 </template>
 
 <style scoped lang="scss">
-@use 'sass:color';
-
 @use '@/assets/themes/theme.scss';
+
+@use 'sass:color';
 
 .menu-button {
   display: flex;
   align-items: center;
   gap: 0.2rem;
+
+  @include theme.font('heading');
+  color: theme.$textColor;
+  font-size: 0.9rem;
 
   border: 1px solid rgba(0, 0, 0, 0);
   border-radius: 3px;
@@ -27,8 +31,6 @@
     outline: none;
   }
 
-  color: theme.$textColor;
-  font-size: 1rem;
   cursor: pointer;
   :deep(i) {
     font-size: 1rem;

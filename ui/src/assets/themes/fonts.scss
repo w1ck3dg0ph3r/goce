@@ -1,0 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+@mixin font($purpose) {
+  @if $purpose == heading {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 700;
+  } @else if $purpose == text {
+    font-family: 'Roboto', sans-serif;
+    font-weight: 400;
+  } @else if $purpose == code {
+    font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', 'Ubuntu Mono', 'Liberation Mono', 'DejaVu Sans Mono', 'Courier New', monospace;
+  } @else {
+    font-family: 'Roboto', sans-serif;
+  }
+}

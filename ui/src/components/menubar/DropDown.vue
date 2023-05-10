@@ -47,7 +47,6 @@ function closeMenu() {
 }
 
 function selectOption(value: string) {
-  console.log('selected: ', value)
   emit('update:modelValue', value)
   closeMenu()
 }
@@ -78,8 +77,8 @@ function selectOption(value: string) {
 
 @use 'sass:color';
 
-$width: 12rem;
-$fontSize: 1rem;
+$width: 13rem;
+$fontSize: 0.9rem;
 $borderRadius: 3px;
 
 .dropdown {
@@ -88,6 +87,11 @@ $borderRadius: 3px;
   align-items: center;
   gap: 0.5rem;
   padding: 0 0.5rem 0 0.5rem;
+
+  @include theme.font('heading');
+  color: theme.$textColor;
+  font-size: $fontSize;
+  cursor: pointer;
 
   border: 1px solid transparent;
   border-radius: $borderRadius;
@@ -106,10 +110,6 @@ $borderRadius: 3px;
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
   }
-
-  color: theme.$textColor;
-  font-size: $fontSize;
-  cursor: pointer;
 
   .value {
     flex: 1;

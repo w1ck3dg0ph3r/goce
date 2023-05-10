@@ -106,7 +106,7 @@ func main() {
 
 <template>
   <div class="root" :class="`theme-${State.theme}`">
-    <MenuBar @format="formatCode" @build="compileCode"></MenuBar>
+    <MenuBar @format="formatCode" @compile="compileCode"></MenuBar>
     <div class="split">
       <CodeEditor
         class="code"
@@ -124,12 +124,7 @@ func main() {
 </template>
 
 <style lang="scss">
-@use '@/reset.scss';
 @use '@/assets/themes/theme.scss';
-
-body {
-  font-size: 14px;
-}
 
 .root {
   height: 100vh;
@@ -137,6 +132,7 @@ body {
   display: flex;
   flex-direction: column;
   background-color: theme.$backgroundColor;
+  color-scheme: theme.$colorScheme;
 
   .split {
     flex: 1;

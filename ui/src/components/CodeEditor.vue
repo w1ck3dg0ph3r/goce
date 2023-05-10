@@ -44,6 +44,7 @@ onMounted(() => {
 
   editor.onDidChangeCursorPosition((ev) => {
     lineHasAssembly.set(State.sourceMap.map.has(ev.position.lineNumber))
+    State.cursorPosition = ev.position
   })
 })
 

@@ -1,21 +1,30 @@
+@use './reset.scss';
+@use './fonts.scss';
+
+@forward './fonts.scss';
+
 :global(.theme-light) {
+  --colorScheme: light;
+
   --logoColor: #00acd7;
 
   --backgroundColor: #f7f7f7;
   --textColor: #efefef;
-  --buttonColor: #338eca;
-  --buttonColorHover: #007acc;
-  --buttonColorFocus: #256e9e;
+  --buttonColor: #00add8;
+  --buttonColorHover: #5dc9e2;
+  --buttonColorFocus: #028bad;
 
   --editorBackgroundColor: #ffffff;
   --editorTextColor: #111111;
 
-  --statusBarIdle: #007acc;
+  --statusBarIdle: #00add8;
   --statusBarError: #cc6633;
   --statusBarTextColor: #f1f1f1;
 }
 
 :global(.theme-dark) {
+  --colorScheme: dark;
+
   --logoColor: #a8a8a8;
 
   --backgroundColor: #2d2d2d;
@@ -27,10 +36,12 @@
   --editorBackgroundColor: #1e1e1e;
   --editorTextColor: #d6d6d6;
 
-  --statusBarIdle: #007acc;
+  --statusBarIdle: #2d2d2d;
   --statusBarError: #cc6633;
-  --statusBarTextColor: #f1f1f1;
+  --statusBarTextColor: #c7c7c7;
 }
+
+$colorScheme: var(--colorScheme);
 
 $logoColor: var(--logoColor);
 
@@ -46,3 +57,13 @@ $editorTextColor: var(--editorTextColor);
 $statusBarIdle: var(--statusBarIdle);
 $statusBarError: var(--statusBarError);
 $statusBarTextColor: var(--statusBarTextColor);
+
+body {
+  font-size: 14px;
+  @include fonts.font(text);
+  input,
+  textarea {
+    font-size: 14px;
+    @include fonts.font(text);
+  }
+}

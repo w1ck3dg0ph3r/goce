@@ -9,6 +9,11 @@ import DropDown from './DropDown.vue'
 
 import '@vscode/codicons/dist/codicon.css'
 
+defineEmits<{
+  (event: 'format'): void
+  (event: 'compile'): void
+}>()
+
 const state = reactive({
   compilers: Array<CompilerInfo>(),
 })
@@ -50,7 +55,7 @@ function switchTheme() {
       <i class="codicon codicon-json"></i>
       <span>Format</span>
     </MenuButton>
-    <MenuButton @click="$emit('build')">
+    <MenuButton @click="$emit('compile')">
       <i class="codicon codicon-play"></i>
       <span>Compile</span>
     </MenuButton>
@@ -58,6 +63,8 @@ function switchTheme() {
 </template>
 
 <style lang="scss" scoped>
+@use '@/assets/themes/theme.scss';
+
 $height: 1.5rem;
 
 #menu {
@@ -67,11 +74,6 @@ $height: 1.5rem;
 
   .logo {
     height: $height;
-  }
-
-  .text {
-    line-height: $height;
-    font-size: 1rem;
   }
 
   .spacer {
