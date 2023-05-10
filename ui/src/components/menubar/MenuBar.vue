@@ -1,34 +1,17 @@
 <script lang="ts" setup>
-import API, { type CompilerInfo } from '@/services/api'
+import bus from '@/services/bus'
 import State from '@/state'
 
-import { computed, onMounted, reactive } from 'vue'
+import { computed } from 'vue'
 import GoceLogo from './GoceLogo.vue'
 import MenuButton from './MenuButton.vue'
+import ShareButton from './ShareButton.vue'
 import DropDown from './DropDown.vue'
 
 import '@vscode/codicons/dist/codicon.css'
 
-defineEmits<{
-  (event: 'format'): void
-  (event: 'compile'): void
-}>()
-
-const state = reactive({
-  compilers: Array<CompilerInfo>(),
-})
-
-onMounted(async () => {
-  try {
-    state.compilers = await API.listCompilers()
-    if (state.compilers.length > 0) State.selectedCompiler = state.compilers[0].name
-  } catch (e) {
-    State.appendError('cannot get compilers')
-  }
-})
-
 const compilerOptions = computed(() => {
-  return state.compilers.map((c) => ({
+  return State.compilers.map((c) => ({
     value: c.name,
     text: c.name,
   }))
@@ -41,21 +24,29 @@ function switchTheme() {
 
 <template>
   <div id="menu">
-    <GoceLogo class="logo"></GoceLogo>
-    <div class="spacer"></div>
+    <a href="/">
+      <GoceLogo class="logo"></GoceLogo>
+    </a>
+
     <MenuButton @click="switchTheme">
       <i
         class="codicon codicon-color-mode"
         :style="{ transform: State.theme == 'dark' ? `rotate(180deg)` : undefined }"
       ></i>
-      <span>{{ State.theme == 'light' ? 'Dark' : 'Light' }}</span>
     </MenuButton>
+
+    <ShareButton></ShareButton>
+
+    <div class="spacer"></div>
+
     <DropDown v-model="State.selectedCompiler" :options="compilerOptions"></DropDown>
-    <MenuButton @click="$emit('format')">
+
+    <MenuButton @click="bus.emit('formatCode')">
       <i class="codicon codicon-json"></i>
       <span>Format</span>
     </MenuButton>
-    <MenuButton @click="$emit('compile')">
+
+    <MenuButton @click="bus.emit('compileCode')">
       <i class="codicon codicon-play"></i>
       <span>Compile</span>
     </MenuButton>
@@ -72,8 +63,14 @@ $height: 1.5rem;
   display: flex;
   gap: 1rem;
 
-  .logo {
-    height: $height;
+  > a {
+    border: none;
+    text-decoration: none;
+    .logo {
+      display: block;
+      height: $height;
+      flex-shrink: 0;
+    }
   }
 
   .spacer {

@@ -15,10 +15,12 @@ import (
 
 type API struct {
 	CompilationCache *CompilationCache
+	SharedCodeStore  *SharedCodeStore
 }
 
 const (
 	CompilationCacheTTL = 2 * time.Hour
+	SharedCodeTTL       = 24 * time.Hour
 )
 
 func (api *API) GetCompilers(ctx *fiber.Ctx) error {
@@ -128,6 +130,38 @@ func (api *API) Compile(ctx *fiber.Ctx) error {
 	return ctx.JSON(Response{
 		Result: &parseRes,
 	})
+}
+
+func (api *API) ShareCode(ctx *fiber.Ctx) error {
+	type Response struct {
+		ID string `json:"id"`
+	}
+	id := NewSharedCodeKey()
+	val := SharedCodeValue{
+		Code: ctx.Body(),
+	}
+	if err := api.SharedCodeStore.Set(id, val, SharedCodeTTL); err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+	return ctx.JSON(Response{
+		ID: id.String(),
+	})
+}
+
+func (api *API) GetSharedCode(ctx *fiber.Ctx) error {
+	id, err := ParseSharedCodeKey(ctx.Params("id"))
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	var val SharedCodeValue
+	if found, err := api.SharedCodeStore.Get(id, &val); !found {
+		return fiber.NewError(fiber.StatusNotFound, "shared code not found")
+	} else if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	}
+	ctx.Response().Header.Set("Content-Type", "application/octet-stream")
+	ctx.Response().SetBody(val.Code)
+	return nil
 }
 
 func gofumptVersionForCompiler(name string) string {
