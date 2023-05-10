@@ -4,3 +4,5 @@
 /goce
 /__debug_bin
 /*.db
+
+.env.production
