@@ -27,13 +27,14 @@ func main() {
 		StrictRouting: true,
 		ReadTimeout:   3 * time.Second,
 		WriteTimeout:  3 * time.Second,
-		IdleTimeout:   15 * time.Second,
+		IdleTimeout:   30 * time.Second,
 	})
 
 	app.Use(cors.New())
 	app.Use(logger.New())
 	app.Use(compress.New())
 	app.Use(etag.New(etag.Config{Weak: true}))
+	app.Use(sanityCheck())
 
 	compilationCache, err := NewCompilationCache("cache.db")
 	if err != nil {
@@ -86,4 +87,21 @@ func serveUI() fiber.Handler {
 		NotFoundFile: "ui/dist/index.html",
 		MaxAge:       60,
 	})
+}
+
+func sanityCheck() fiber.Handler {
+	const maxContentLength = 64 << 10
+	errInsane := fiber.NewError(fiber.StatusBadRequest, "request too long")
+
+	return func(ctx *fiber.Ctx) error {
+		if ctx.Request().Header.ContentLength() > maxContentLength {
+			return errInsane
+		}
+
+		if len(ctx.Request().Body()) > maxContentLength {
+			return errInsane
+		}
+
+		return ctx.Next()
+	}
 }

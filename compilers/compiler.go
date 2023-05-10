@@ -1,6 +1,7 @@
 package compilers
 
 import (
+	"context"
 	"io"
 	"os"
 	"os/exec"
@@ -11,7 +12,7 @@ import (
 
 type Compiler interface {
 	Info() (CompilerInfo, error)
-	Compile(code []byte) (Result, error)
+	Compile(ctx context.Context, code []byte) (Result, error)
 }
 
 type CompilerInfo struct {

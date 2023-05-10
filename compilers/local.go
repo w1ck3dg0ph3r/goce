@@ -2,6 +2,7 @@ package compilers
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -15,7 +16,7 @@ type localCompiler struct {
 	info CompilerInfo
 }
 
-func (c *localCompiler) Compile(code []byte) (Result, error) {
+func (c *localCompiler) Compile(ctx context.Context, code []byte) (Result, error) {
 	tmpDir := filepath.Join(os.TempDir(), "goce")
 	if err := os.MkdirAll(tmpDir, 0o777); err != nil {
 		return Result{}, fmt.Errorf("create tmp dir: %w", err)
@@ -40,7 +41,7 @@ func (c *localCompiler) Compile(code []byte) (Result, error) {
 	buildOutput := &bytes.Buffer{}
 	objdumpOutput := &bytes.Buffer{}
 
-	cmd := exec.Command(c.GoPath, "build", "-o", "main", "-trimpath", "-gcflags", "-m=2", goFilename)
+	cmd := exec.CommandContext(ctx, c.GoPath, "build", "-o", "main", "-trimpath", "-gcflags", "-m=2", goFilename)
 	cmd.Dir = buildDir
 	cmd.Stdout = buildOutput
 	cmd.Stderr = buildOutput
@@ -57,7 +58,7 @@ func (c *localCompiler) Compile(code []byte) (Result, error) {
 		return res, fmt.Errorf("build: %w", err)
 	}
 
-	cmd = exec.Command(c.GoPath, "tool", "objdump", "-s", "^main\\.", "main")
+	cmd = exec.CommandContext(ctx, c.GoPath, "tool", "objdump", "-s", "^main\\.", "main")
 	cmd.Dir = buildDir
 	cmd.Stdout = objdumpOutput
 	cmd.Stderr = objdumpOutput

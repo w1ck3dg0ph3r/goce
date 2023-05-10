@@ -97,7 +97,7 @@ func (api *API) Compile(ctx *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, "compiler not found: ", req.Name)
 	}
 
-	compRes, err := compiler.Compile(code)
+	compRes, err := compiler.Compile(ctx.Context(), code)
 	if err != nil {
 		output, _ := io.ReadAll(compRes.BuildOutput)
 		errors := fmt.Sprintf("%s\n%s", output, err.Error())
