@@ -70,10 +70,6 @@ $height: 1.57rem;
       animation: rotation 2s infinite linear;
     }
   }
-  .cursor-position {
-    // @include theme.font(code);
-    // font-weight: bold;
-  }
 }
 
 .spacer {

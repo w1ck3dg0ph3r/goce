@@ -48,6 +48,26 @@ export class API {
     }
     return await res.json()
   }
+
+  async shareCode(code: string): Promise<string> {
+    const res = await fetch(`${this.baseUrl}/api/shared`, {
+      method: 'POST',
+      body: code,
+    })
+    if (!res.ok) {
+      throw Error('cannot share code')
+    }
+    const shared = await res.json()
+    return shared.id
+  }
+
+  async getSharedCode(id: string): Promise<string> {
+    const res = await fetch(`${this.baseUrl}/api/shared/${id}`)
+    if (!res.ok) {
+      throw Error('cannot get shared code')
+    }
+    return await res.text()
+  }
 }
 
 export interface CompilerInfo {
