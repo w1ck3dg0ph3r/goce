@@ -35,7 +35,7 @@ onMounted(() => {
         const asmRanges = State.sourceMap.map.get(sourceLine)?.ranges
         if (asmRanges && asmRanges.length > 0) {
           const firstAsmLine = asmRanges[0].start
-          bus.emit('jumpToAssemblyLine', firstAsmLine)
+          bus.emit('revealAssemblyLine', firstAsmLine)
           bus.emit('sourceLineHovered', sourceLine)
         }
       }
@@ -63,8 +63,14 @@ function setCode(code: string, keepCursor: boolean) {
   $editor.value?.setValue(code, keepCursor)
 }
 
-bus.on('jumpToSourceLine', (line) => {
+bus.on('revealSourceLine', (line) => {
   $editor.value?.getEditor().revealLineNearTop(line)
+})
+
+bus.on('jumpToSourceLine', (location) => {
+  $editor.value?.getEditor().focus()
+  $editor.value?.getEditor().revealLineInCenter(location.line)
+  $editor.value?.getEditor().setPosition({ lineNumber: location.line, column: location.column || 1 })
 })
 
 function lineHovered(lineNumber: number) {

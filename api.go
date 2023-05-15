@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"time"
 
 	"github.com/Masterminds/semver/v3"
@@ -65,8 +64,9 @@ func (api *API) Compile(ctx *fiber.Ctx) error {
 		Code string `json:"code"`
 	}
 	type Response struct {
-		*parsers.Result
-		Errors string `json:"errors,omitempty"`
+		BuildFailed bool   `json:"buildFailed"`
+		BuildOutput string `json:"buildOutput"`
+		parsers.Result
 	}
 
 	var req Request
@@ -75,41 +75,36 @@ func (api *API) Compile(ctx *fiber.Ctx) error {
 	}
 	code := []byte(req.Code)
 
-	var cacheValue CompilationCacheValue
-	if found, err := api.CompilationCache.Get(CompilationCacheKey{CompilerName: req.Name, Code: code}, &cacheValue); found {
-		if cacheValue.Errors != "" {
-			return ctx.JSON(Response{
-				Errors: cacheValue.Errors,
-			})
-		}
-		return ctx.JSON(Response{
-			Result: &cacheValue.Result,
-		})
-	} else if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
-	}
-
 	compiler := compilers.Default()
 	if req.Name != "" {
 		compiler = compilers.Get(req.Name)
 	}
 	if compiler == nil {
-		return fiber.NewError(fiber.StatusNotFound, "compiler not found: ", req.Name)
+		return fiber.NewError(fiber.StatusNotFound, fmt.Sprintf("compiler not found: %s", req.Name))
+	}
+	compInfo, err := compiler.Info()
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "cannot get compiler info")
+	}
+
+	cacheKey := CompilationCacheKey{CompilerName: compInfo.Name, Code: code}
+	var cacheValue CompilationCacheValue
+	if found, err := api.CompilationCache.Get(cacheKey, &cacheValue); found {
+		return ctx.JSON(Response(cacheValue))
+	} else if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
 	compRes, err := compiler.Compile(ctx.Context(), code)
+	cacheValue.BuildOutput = string(compRes.BuildOutput)
 	if err != nil {
-		output, _ := io.ReadAll(compRes.BuildOutput)
-		errors := fmt.Sprintf("%s\n%s", output, err.Error())
-		if err := api.CompilationCache.Set(
-			CompilationCacheKey{CompilerName: compRes.CompilerInfo.Name, Code: code},
-			CompilationCacheValue{Errors: errors},
-			CompilationCacheTTL,
-		); err != nil {
+		cacheValue.BuildFailed = true
+		if err := api.CompilationCache.Set(cacheKey, cacheValue, CompilationCacheTTL); err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 		}
 		return ctx.JSON(Response{
-			Errors: errors,
+			BuildFailed: true,
+			BuildOutput: string(compRes.BuildOutput),
 		})
 	}
 
@@ -118,17 +113,15 @@ func (api *API) Compile(ctx *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, "parser not found for go version: ", compRes.CompilerInfo.Version)
 	}
 	parseRes := parser.Parse(compRes)
+	cacheValue.Result = parseRes
 
-	if err := api.CompilationCache.Set(
-		CompilationCacheKey{CompilerName: compRes.CompilerInfo.Name, Code: code},
-		CompilationCacheValue{Result: parseRes},
-		CompilationCacheTTL,
-	); err != nil {
+	if err := api.CompilationCache.Set(cacheKey, cacheValue, CompilationCacheTTL); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
 	return ctx.JSON(Response{
-		Result: &parseRes,
+		BuildOutput: string(compRes.BuildOutput),
+		Result:      parseRes,
 	})
 }
 

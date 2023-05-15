@@ -9,6 +9,8 @@
   --logoColor: #00acd7;
 
   --backgroundColor: #f7f7f7;
+  --backgroundColorHighlight: #cfcfcf;
+
   --textColor: #efefef;
   --buttonColor: #00add8;
   --buttonColorHover: #5dc9e2;
@@ -28,6 +30,8 @@
   --logoColor: #a8a8a8;
 
   --backgroundColor: #2d2d2d;
+  --backgroundColorHighlight: #4b4b4b;
+
   --textColor: #c7c7c7;
   --buttonColor: #3d3d3d;
   --buttonColorHover: #4b4b4b;
@@ -46,6 +50,8 @@ $colorScheme: var(--colorScheme);
 $logoColor: var(--logoColor);
 
 $backgroundColor: var(--backgroundColor);
+$backgroundColorHighlight: var(--backgroundColorHighlight);
+
 $textColor: var(--textColor);
 $buttonColor: var(--buttonColor);
 $buttonColorHover: var(--buttonColorHover);

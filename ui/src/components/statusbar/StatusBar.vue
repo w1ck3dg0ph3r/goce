@@ -3,17 +3,18 @@ import State, { Status } from '@/state'
 import { computed } from 'vue'
 
 const isError = computed(() => {
-  return State.status == Status.Idle && State.errorMessage != ''
+  return State.status == Status.Error
 })
 
 const statusIcon = computed(() => {
-  if (State.status != Status.Idle) {
-    return 'codicon-sync animated'
+  switch (State.status) {
+    case (Status.Formatting, Status.Compiling):
+      return 'codicon-sync animated'
+    case Status.Error:
+      return 'codicon-error'
+    default:
+      return 'codicon-pass'
   }
-  if (State.errorMessage != '') {
-    return 'codicon-error'
-  }
-  return 'codicon-pass'
 })
 
 const statusText = computed(() => {
@@ -36,6 +37,14 @@ const statusText = computed(() => {
     <div class="cursor-position">
       Ln {{ State.cursorPosition.lineNumber }}, Col {{ State.cursorPosition.column }}
     </div>
+    <div>
+      <button @click="State.bottomPanelVisible = !State.bottomPanelVisible">
+        <i
+          class="codicon"
+          :class="`codicon-chevron-${State.bottomPanelVisible ? 'down' : 'up'}`"
+        ></i>
+      </button>
+    </div>
   </div>
 </template>
 
@@ -51,12 +60,12 @@ $height: 1.57rem;
   align-items: center;
   gap: 0.5rem;
   padding-left: 0.5rem;
-  padding-right: 0.5rem;
   overflow: hidden;
 
   line-height: $height;
   font-size: 0.75rem;
   color: theme.$statusBarTextColor;
+  cursor: default;
 
   &.error {
     background-color: theme.$statusBarError;
@@ -68,6 +77,15 @@ $height: 1.57rem;
     color: theme.$statusBarTextColor;
     &.animated {
       animation: rotation 2s infinite linear;
+    }
+  }
+
+  button {
+    border: none;
+    cursor: pointer;
+    background-color: transparent;
+    &:hover {
+      background-color: rgba($color: #ffffff, $alpha: 0.15);
     }
   }
 }

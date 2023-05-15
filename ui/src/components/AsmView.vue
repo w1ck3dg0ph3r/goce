@@ -25,7 +25,7 @@ onMounted(() => {
       if (assemblyLine) {
         const sourceLine = State.sourceMap.reverseMap.get(assemblyLine)
         if (sourceLine) {
-          bus.emit('jumpToSourceLine', sourceLine)
+          bus.emit('revealSourceLine', sourceLine)
           bus.emit('sourceLineHovered', sourceLine)
         }
       }
@@ -42,7 +42,7 @@ watch(
   (code) => $editor.value?.setValue(code)
 )
 
-bus.on('jumpToAssemblyLine', (line) => {
+bus.on('revealAssemblyLine', (line) => {
   $editor.value?.getEditor().revealLineNearTop(line)
 })
 

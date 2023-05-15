@@ -2,8 +2,9 @@
 import MenuBar from '@/components/menubar/MenuBar.vue'
 import CodeEditor from '@/components/CodeEditor.vue'
 import AsmView from '@/components/AsmView.vue'
-import OutputPane from '@/components/OutputPane.vue'
+import OutputPane from '@/components/outputpane/OutputPane.vue'
 import StatusBar from '@/components/statusbar/StatusBar.vue'
+import { Panel, Splitter } from '@/components/ui/PanelSplitter.vue'
 
 import API from '@/services/api'
 import bus from '@/services/bus'
@@ -26,7 +27,7 @@ onMounted(async () => {
 })
 
 async function formatCode() {
-  if (State.status != Status.Idle) return
+  if (State.status == Status.Formatting) return
   let code = $codeEditor.value?.getCode()
   if (!code) return
 
@@ -49,25 +50,23 @@ async function formatCode() {
 }
 
 async function compileCode() {
-  if (State.status != Status.Idle) return
+  if (State.status == Status.Compiling) return
   let code = $codeEditor.value?.getCode()
   if (!code) return
 
   State.status = Status.Compiling
   try {
-    let compiled = await API.compile(code, State.selectedCompiler)
-    if (compiled.errors) {
-      State.setError(compiled.errors)
-      State.status = Status.Idle
+    let compiled = await API.compileCode(code, State.selectedCompiler)
+    State.buildOutput = compiled.buildOutput
+    if (compiled.buildFailed) {
+      State.status = Status.Error
       return
-    } else {
-      State.clearErrors()
     }
     State.sourceMap.update(compiled)
+    State.status = Status.Idle
   } catch (e) {
     State.appendError('cannot compile code')
-  } finally {
-    State.status = Status.Idle
+    State.status = Status.Error
   }
 }
 
@@ -156,15 +155,24 @@ func main() {
   <div class="root" :class="`theme-${State.theme}`">
     <MenuBar></MenuBar>
 
-    <div class="split">
-      <CodeEditor class="code" ref="$codeEditor" @change="compileCode"></CodeEditor>
-      <AsmView class="assembly"></AsmView>
-    </div>
+    <Splitter horizontal class="main">
+      <Panel :min-size="15">
+        <Splitter>
+          <Panel>
+            <CodeEditor ref="$codeEditor" @change="compileCode"></CodeEditor>
+          </Panel>
+          <Panel>
+            <AsmView></AsmView>
+          </Panel>
+        </Splitter>
+      </Panel>
 
-    <div class="bottom">
-      <OutputPane></OutputPane>
-      <StatusBar></StatusBar>
-    </div>
+      <Panel v-if="State.bottomPanelVisible" :min-size="15" :size="25">
+        <OutputPane></OutputPane>
+      </Panel>
+    </Splitter>
+
+    <StatusBar></StatusBar>
   </div>
 </template>
 
@@ -179,19 +187,8 @@ func main() {
   background-color: theme.$backgroundColor;
   color-scheme: theme.$colorScheme;
 
-  .split {
+  .main {
     flex: 1;
-    display: flex;
-    gap: 0.5rem;
-
-    .code,
-    .assembly {
-      width: 50%;
-    }
-  }
-
-  .bottom {
-    flex: 0;
   }
 }
 </style>

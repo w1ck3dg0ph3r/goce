@@ -22,7 +22,12 @@ class State {
   cursorPosition: Position = new Position(1, 1)
 
   status: Status = Status.Idle
-  errorMessage: string = ''
+
+  bottomPanelVisible = true
+  bottomPanelActiveTab: number = 0
+
+  errorMessages = ''
+  buildOutput = ''
 
   sharedCodeLink: string | null = null
 
@@ -31,15 +36,15 @@ class State {
   }
 
   setError(error: string) {
-    this.errorMessage = error
+    this.errorMessages = error
   }
 
   appendError(error: string) {
-    this.errorMessage += error + '\n'
+    this.errorMessages += error + '\n'
   }
 
   clearErrors() {
-    this.errorMessage = ''
+    this.errorMessages = ''
   }
 }
 
@@ -47,6 +52,12 @@ export enum Status {
   Idle,
   Formatting,
   Compiling,
+  Error,
+}
+
+export enum BottomPanelTab {
+  BuildOutput,
+  Errors,
 }
 
 const state = reactive(new State())

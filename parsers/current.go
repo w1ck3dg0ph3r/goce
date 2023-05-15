@@ -17,8 +17,8 @@ type currentParser struct{}
 
 func (currentParser) Parse(output compilers.Result) Result {
 	var res Result
-	parseBuildOutput(&res, output.SourceCode, output.BuildOutput)
-	parseObjdumpOutput(&res, output.ObjdumpOutput)
+	parseBuildOutput(&res, output.SourceCode, bytes.NewReader(output.BuildOutput))
+	parseObjdumpOutput(&res, bytes.NewReader(output.ObjdumpOutput))
 	return res
 }
 

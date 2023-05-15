@@ -32,7 +32,7 @@ export class API {
     return await res.json()
   }
 
-  async compile(code: string, compilerName?: string): Promise<CompilationResult> {
+  async compileCode(code: string, compilerName?: string): Promise<CompilationResult> {
     const res = await fetch(`${this.baseUrl}/api/compile`, {
       method: 'POST',
       headers: {
@@ -82,6 +82,8 @@ export interface FormattedCode {
 }
 
 export interface CompilationResult {
+  buildFailed: boolean
+  buildOutput: string
   assembly?: string
   mapping?: {
     source: number
@@ -104,7 +106,6 @@ export interface CompilationResult {
     name: string
     location: FileLocation
   }[]
-  errors?: string
 }
 
 interface FileLocation {

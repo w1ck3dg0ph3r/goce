@@ -14,8 +14,9 @@ type CompilationCacheKey struct {
 }
 
 type CompilationCacheValue struct {
-	Result parsers.Result
-	Errors string
+	BuildFailed bool
+	BuildOutput string
+	parsers.Result
 }
 
 type CompilationCache = cache.Cache[CompilationCacheKey, CompilationCacheValue]

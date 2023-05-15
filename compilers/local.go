@@ -38,34 +38,37 @@ func (c *localCompiler) Compile(ctx context.Context, code []byte) (Result, error
 	}
 	fmain.Close()
 
-	buildOutput := &bytes.Buffer{}
-	objdumpOutput := &bytes.Buffer{}
-
-	cmd := exec.CommandContext(ctx, c.GoPath, "build", "-o", "main", "-trimpath", "-gcflags", "-m=2", goFilename)
-	cmd.Dir = buildDir
-	cmd.Stdout = buildOutput
-	cmd.Stderr = buildOutput
-
 	res := Result{
 		CompilerInfo:   c.info,
 		SourceFilename: mainFilename,
 		SourceCode:     code,
-		BuildOutput:    buildOutput,
-		ObjdumpOutput:  objdumpOutput,
 	}
 
-	if err := cmd.Run(); err != nil {
+	cmd := exec.CommandContext(ctx, c.GoPath, "build", "-o", os.DevNull, goFilename)
+	cmd.Dir = buildDir
+	output, err := cmd.CombinedOutput()
+	output, _ = bytes.CutPrefix(output, []byte("# command-line-arguments\n"))
+	res.BuildOutput = output
+	if err != nil {
 		return res, fmt.Errorf("build: %w", err)
+	}
+
+	cmd = exec.CommandContext(ctx, c.GoPath, "build", "-o", "main", "-trimpath", "-gcflags", "-m=2", goFilename)
+	cmd.Dir = buildDir
+	output, err = cmd.CombinedOutput()
+	output, _ = bytes.CutPrefix(output, []byte("# command-line-arguments\n"))
+	res.BuildOutput = output
+	if err != nil {
+		return res, fmt.Errorf("debug: %w", err)
 	}
 
 	cmd = exec.CommandContext(ctx, c.GoPath, "tool", "objdump", "-s", "^main\\.", "main")
 	cmd.Dir = buildDir
-	cmd.Stdout = objdumpOutput
-	cmd.Stderr = objdumpOutput
-
-	if err := cmd.Run(); err != nil {
+	output, err = cmd.CombinedOutput()
+	if err != nil {
 		return res, fmt.Errorf("objdump: %w", err)
 	}
+	res.ObjdumpOutput = output
 
 	return res, nil
 }

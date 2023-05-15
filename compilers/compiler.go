@@ -2,7 +2,6 @@ package compilers
 
 import (
 	"context"
-	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -26,8 +25,8 @@ type Result struct {
 	SourceFilename string
 	SourceCode     []byte
 
-	BuildOutput   io.Reader
-	ObjdumpOutput io.Reader
+	BuildOutput   []byte
+	ObjdumpOutput []byte
 }
 
 // List returns available compilers.

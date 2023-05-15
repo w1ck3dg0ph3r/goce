@@ -7,8 +7,6 @@ import '@/components/editor/plan9asm'
 </script>
 
 <script setup lang="ts">
-import bus from '@/services/bus'
-
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 
 import { computed, onMounted, onUnmounted, ref, watchEffect, type WatchStopHandle } from 'vue'
@@ -40,11 +38,17 @@ let decorations: monaco.editor.IEditorDecorationsCollection
 let highlightDecorations: monaco.editor.IEditorDecorationsCollection
 let hoveredLine = -1
 
+let resobs: ResizeObserver
+
 const unsubscribeHandlers = new Array<WatchStopHandle>()
+const debouncedLayoutEditor = debounce(layoutEditor, 75)
 
 onMounted(() => {
   createEditor()
   layoutEditor()
+
+  resobs = new ResizeObserver(debouncedLayoutEditor)
+  resobs.observe($editor.value!.parentElement!)
 
   unsubscribeHandlers.push(
     watchEffect(() => {
@@ -81,6 +85,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  resobs?.disconnect()
   for (let stop of unsubscribeHandlers) stop()
   unsubscribeHandlers.splice(0)
   editor.dispose()
@@ -128,12 +133,6 @@ function createEditor() {
       emit('hover', hoveredLine)
     }
   })
-
-  const debounced = debounce(layoutEditor, 300)
-  window.addEventListener('resize', debounced)
-  unsubscribeHandlers.push(() => window.removeEventListener('resize', debounced))
-  bus.on('editorLayoutRequested', layoutEditor)
-  unsubscribeHandlers.push(() => bus.off('editorLayoutRequested', layoutEditor))
 }
 
 function layoutEditor() {

@@ -136,9 +136,7 @@ export class SourceMap {
           range: new monaco.Range(line, column, line, column + ic.length),
           options: {
             hoverMessage: [{ value: `inlining call to \`${ic.name}\`` }],
-            // inlineClassName: 'inline-hover-inlined-call',
             className: 'inlinedcall',
-            // className: 'squiggly-error',
           },
         })
       }
