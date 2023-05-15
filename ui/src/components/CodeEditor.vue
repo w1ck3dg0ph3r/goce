@@ -42,6 +42,16 @@ onMounted(() => {
     },
   })
 
+  editor.addAction({
+    id: 'goce-format-code',
+    label: 'Format Code',
+    contextMenuGroupId: '1_modification',
+    keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyMod.Alt | monaco.KeyCode.KeyF],
+    run() {
+      bus.emit('formatCode')
+    },
+  })
+
   editor.onDidChangeCursorPosition((ev) => {
     lineHasAssembly.set(State.sourceMap.map.has(ev.position.lineNumber))
     State.cursorPosition = ev.position
@@ -70,7 +80,9 @@ bus.on('revealSourceLine', (line) => {
 bus.on('jumpToSourceLine', (location) => {
   $editor.value?.getEditor().focus()
   $editor.value?.getEditor().revealLineInCenter(location.line)
-  $editor.value?.getEditor().setPosition({ lineNumber: location.line, column: location.column || 1 })
+  $editor.value
+    ?.getEditor()
+    .setPosition({ lineNumber: location.line, column: location.column || 1 })
 })
 
 function lineHovered(lineNumber: number) {
