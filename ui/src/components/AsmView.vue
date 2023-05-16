@@ -43,7 +43,10 @@ watch(
 )
 
 bus.on('revealAssemblyLine', (line) => {
-  $editor.value?.getEditor().revealLineNearTop(line)
+  let editor = $editor.value?.getEditor()
+  editor?.revealLine(line)
+  editor?.setPosition({ lineNumber: line, column: 1 })
+  editor?.trigger('unfold', 'editor.unfold', {})
 })
 
 function lineHovered(lineNumber: number) {
@@ -60,7 +63,7 @@ function lineHovered(lineNumber: number) {
       fontSize: 10,
       readOnly: true,
       lineNumbers: 'off',
-      folding: false,
+      // folding: false,
     }"
     @hover="lineHovered"
     :decorations="State.sourceMap.assemblyDecorations"

@@ -214,12 +214,15 @@ const language: monaco.languages.IMonarchLanguage = {
     root: [
       [/^(0x\w+\t)([A-Z_.]+)/, ['annotation', 'keyword']],
       [/^([A-Z_.]+)\s+/, 'keyword'],
-      [/[A-Za-z]+[\w_.·:*+=]+/, {
+      [
+        /[A-Za-z]+[\w_.·:*+=]+/,
+        {
           cases: {
             '@registers': 'string',
             '@default': 'identifier',
           },
-      }],
+        },
+      ],
       [/[ \t,()\r\n]+/, 'white'],
       [/[,()]/, ''],
       [/(\$?[-0-9xA-Fa-f]+)/, 'number'],
@@ -230,3 +233,36 @@ const language: monaco.languages.IMonarchLanguage = {
 monaco.languages.register({ id: languageId })
 
 monaco.languages.setMonarchTokensProvider(languageId, language)
+
+monaco.languages.registerFoldingRangeProvider(languageId, {
+  provideFoldingRanges(model) {
+    const regions = new Array<monaco.languages.FoldingRange>()
+    let region: monaco.languages.FoldingRange | null = null
+    for (let i = 0; i < model.getLineCount(); i++) {
+      const line = model.getLineContent(i + 1)
+      if (line.startsWith('TEXT')) {
+        if (!region) {
+          region = {
+            start: i + 1,
+            end: 0,
+            kind: monaco.languages.FoldingRangeKind.Region,
+          }
+        } else {
+          region.end = i
+          regions.push(region)
+          region = {
+            start: i + 1,
+            end: 0,
+            kind: monaco.languages.FoldingRangeKind.Region,
+          }
+        }
+      }
+    }
+    if (region) {
+      region.end = model.getLineCount()
+      regions.push(region)
+    }
+    console.log(regions)
+    return regions
+  },
+})
