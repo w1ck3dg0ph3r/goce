@@ -16,7 +16,7 @@ type localCompiler struct {
 	info CompilerInfo
 }
 
-func (c *localCompiler) Compile(ctx context.Context, code []byte) (Result, error) {
+func (c *localCompiler) Compile(ctx context.Context, config Config, code []byte) (Result, error) {
 	tmpDir := filepath.Join(os.TempDir(), "goce")
 	if err := os.MkdirAll(tmpDir, 0o777); err != nil {
 		return Result{}, fmt.Errorf("create tmp dir: %w", err)
@@ -38,6 +38,14 @@ func (c *localCompiler) Compile(ctx context.Context, code []byte) (Result, error
 	}
 	fmain.Close()
 
+	buildEnv := os.Environ()
+	if config.Platform != c.info.Platform {
+		buildEnv = append(buildEnv, fmt.Sprintf("GOOS=%s", config.Platform))
+	}
+	if config.Architecture != c.info.Architecture {
+		buildEnv = append(buildEnv, fmt.Sprintf("GOARCH=%s", config.Architecture))
+	}
+
 	res := Result{
 		CompilerInfo:   c.info,
 		SourceFilename: mainFilename,
@@ -46,6 +54,7 @@ func (c *localCompiler) Compile(ctx context.Context, code []byte) (Result, error
 
 	cmd := exec.CommandContext(ctx, c.GoPath, "build", "-o", os.DevNull, goFilename)
 	cmd.Dir = buildDir
+	cmd.Env = buildEnv
 	output, err := cmd.CombinedOutput()
 	output, _ = bytes.CutPrefix(output, []byte("# command-line-arguments\n"))
 	res.BuildOutput = output
@@ -55,6 +64,7 @@ func (c *localCompiler) Compile(ctx context.Context, code []byte) (Result, error
 
 	cmd = exec.CommandContext(ctx, c.GoPath, "build", "-o", "main", "-trimpath", "-gcflags", "-m=2", goFilename)
 	cmd.Dir = buildDir
+	cmd.Env = buildEnv
 	output, err = cmd.CombinedOutput()
 	output, _ = bytes.CutPrefix(output, []byte("# command-line-arguments\n"))
 	res.BuildOutput = output
@@ -85,23 +95,23 @@ func (c *localCompiler) Info() (CompilerInfo, error) {
 	}
 	out = bytes.TrimPrefix(out, []byte("go version "))
 	out = bytes.TrimSpace(out)
-	name := string(out)
 	match := reGoVersion.FindSubmatch(out)
 	if match == nil {
 		return CompilerInfo{}, fmt.Errorf("cant parse go version: %q", string(out))
 	}
 	c.info = CompilerInfo{
-		Name:     name,
-		Version:  string(match[reGoVersionVersion]),
-		Platform: string(match[reGoVersionPlatform]),
+		Version:      string(match[reGoVersion_Version]),
+		Platform:     string(match[reGoVersion_Platform]),
+		Architecture: string(match[reGoVersion_Architecture]),
 	}
 	return c.info, nil
 }
 
-var reGoVersion = regexp.MustCompile(`go(\d+\.\d+(\.\d+)?)\s+([\w\/]+)`)
+var reGoVersion = regexp.MustCompile(`go(\d+\.\d+(\.\d+)?)\s+(\w+)/(\w+)`)
 
 const (
-	reGoVersionVersion = iota + 1
-	reGoVersionVersionPatch
-	reGoVersionPlatform
+	reGoVersion_Version = iota + 1
+	reGoVersion_VersionPatch
+	reGoVersion_Platform
+	reGoVersion_Architecture
 )

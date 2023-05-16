@@ -212,8 +212,8 @@ const language: monaco.languages.IMonarchLanguage = {
   ],
   tokenizer: {
     root: [
-      [/^(0x\w+\t)([A-Z_]+)/, ['annotation', 'keyword']],
-      [/^([A-Z_]+)\s+/, 'keyword'],
+      [/^(0x\w+\t)([A-Z_.]+)/, ['annotation', 'keyword']],
+      [/^([A-Z_.]+)\s+/, 'keyword'],
       [/[A-Za-z]+[\w_.·:*+=]+/, {
           cases: {
             '@registers': 'string',

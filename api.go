@@ -23,9 +23,20 @@ const (
 )
 
 func (api *API) GetCompilers(ctx *fiber.Ctx) error {
-	type CompilersResponse []compilers.CompilerInfo
+	type CompilerInfo struct {
+		Name string `json:"name"`
+		compilers.CompilerInfo
+	}
+	type Response []CompilerInfo
 	list := compilers.List()
-	return ctx.JSON(CompilersResponse(list))
+	res := make(Response, 0, len(list))
+	for i := range list {
+		res = append(res, CompilerInfo{
+			Name:         list[i].Name(),
+			CompilerInfo: list[i],
+		})
+	}
+	return ctx.JSON(res)
 }
 
 func (api *API) Format(ctx *fiber.Ctx) error {
@@ -73,6 +84,10 @@ func (api *API) Compile(ctx *fiber.Ctx) error {
 	if err := ctx.BodyParser(&req); err != nil {
 		return err
 	}
+	compInfo, err := compilers.ParseInfo(req.Name)
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
 	code := []byte(req.Code)
 
 	compiler := compilers.Default()
@@ -82,12 +97,8 @@ func (api *API) Compile(ctx *fiber.Ctx) error {
 	if compiler == nil {
 		return fiber.NewError(fiber.StatusNotFound, fmt.Sprintf("compiler not found: %s", req.Name))
 	}
-	compInfo, err := compiler.Info()
-	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, "cannot get compiler info")
-	}
 
-	cacheKey := CompilationCacheKey{CompilerName: compInfo.Name, Code: code}
+	cacheKey := CompilationCacheKey{CompilerName: compInfo.Name(), Code: code}
 	var cacheValue CompilationCacheValue
 	if found, err := api.CompilationCache.Get(cacheKey, &cacheValue); found {
 		return ctx.JSON(Response(cacheValue))
@@ -95,7 +106,11 @@ func (api *API) Compile(ctx *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	compRes, err := compiler.Compile(ctx.Context(), code)
+	compConfig := compilers.Config{
+		Platform:     compInfo.Platform,
+		Architecture: compInfo.Architecture,
+	}
+	compRes, err := compiler.Compile(ctx.Context(), compConfig, code)
 	cacheValue.BuildOutput = string(compRes.BuildOutput)
 	if err != nil {
 		cacheValue.BuildFailed = true
