@@ -12,6 +12,8 @@
   --backgroundColorHighlight: #cfcfcf;
 
   --textColor: #efefef;
+  --textColorInverted: #4e4e4e;
+
   --buttonColor: #00add8;
   --buttonColorHover: #5dc9e2;
   --buttonColorFocus: #028bad;
@@ -33,6 +35,8 @@
   --backgroundColorHighlight: #4b4b4b;
 
   --textColor: #c7c7c7;
+  --textColorInverted: #505050;
+
   --buttonColor: #3d3d3d;
   --buttonColorHover: #4b4b4b;
   --buttonColorFocus: #6e6e6e;
@@ -53,6 +57,8 @@ $backgroundColor: var(--backgroundColor);
 $backgroundColorHighlight: var(--backgroundColorHighlight);
 
 $textColor: var(--textColor);
+$textColorInverted: var(--textColorInverted);
+
 $buttonColor: var(--buttonColor);
 $buttonColorHover: var(--buttonColorHover);
 $buttonColorFocus: var(--buttonColorFocus);

@@ -5,6 +5,7 @@ import AsmView from '@/components/AsmView.vue'
 import OutputPane from '@/components/outputpane/OutputPane.vue'
 import StatusBar from '@/components/statusbar/StatusBar.vue'
 import { Panel, Splitter } from '@/components/ui/PanelSplitter.vue'
+import LoadingIndicator from '@/components/ui/LoadingIndicator.vue'
 
 import API from '@/services/api'
 import bus from '@/services/bus'
@@ -55,11 +56,13 @@ async function compileCode() {
   if (!code) return
 
   State.status = Status.Compiling
+  State.buildOutput = ''
   try {
     let compiled = await API.compileCode(code, State.selectedCompiler)
     State.buildOutput = compiled.buildOutput
     if (compiled.buildFailed) {
       State.status = Status.Error
+      State.sourceMap.assembly = ''
       return
     }
     State.sourceMap.update(compiled)
@@ -161,8 +164,9 @@ func main() {
           <Panel>
             <CodeEditor ref="$codeEditor" @change="compileCode"></CodeEditor>
           </Panel>
-          <Panel>
+          <Panel class="asm-view">
             <AsmView></AsmView>
+            <LoadingIndicator v-if="State.status == Status.Compiling"></LoadingIndicator>
           </Panel>
         </Splitter>
       </Panel>
@@ -189,6 +193,10 @@ func main() {
 
   .main {
     flex: 1;
+
+    .asm-view {
+      position: relative;
+    }
   }
 }
 </style>

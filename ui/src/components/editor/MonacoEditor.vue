@@ -154,7 +154,6 @@ function getValue(): string {
 }
 
 function setValue(code: string, keepCursor: boolean = true) {
-  if (!code) return
   let pos: monaco.Position = new monaco.Position(1, 1)
   if (keepCursor) pos = editor.getPosition() ?? pos
   editor.getModel()?.setValue(code)
