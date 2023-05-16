@@ -8,6 +8,8 @@ import { nextTick, ref, watch } from 'vue'
 const shareButtonText = ref('Share')
 const $sharedLink = ref<HTMLInputElement | null>(null)
 
+const inputWidth = ref(0)
+
 watch(
   () => State.sharedCodeLink,
   (newLink, oldLink) => {
@@ -17,6 +19,7 @@ watch(
         if ($sharedLink.value) {
           $sharedLink.value.focus()
           $sharedLink.value.select()
+          inputWidth.value = $sharedLink.value.scrollWidth
         }
       })
     }
@@ -46,9 +49,11 @@ async function shareCode() {
       ref="$sharedLink"
       class="shared-link"
       type="text"
+      readonly
       spellcheck="false"
       @click.stop
       :value="State.sharedCodeLink"
+      :style="{ width: `${inputWidth}px` }"
     />
   </MenuButton>
 </template>
