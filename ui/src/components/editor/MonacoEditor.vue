@@ -1,17 +1,16 @@
 <script lang="ts">
+import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 import 'monaco-editor/esm/vs/editor/editor.all'
 import 'monaco-editor/esm/vs/basic-languages/go/go.contribution'
 
 import '@/components/editor/environment'
 import '@/components/editor/plan9asm'
-</script>
-
-<script setup lang="ts">
-import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 
 import { computed, onMounted, onUnmounted, ref, watchEffect, type WatchStopHandle } from 'vue'
 import { debounce, merge } from 'lodash'
+</script>
 
+<script setup lang="ts">
 const props = defineProps<{
   theme: string
   language: string

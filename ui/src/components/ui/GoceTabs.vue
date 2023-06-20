@@ -328,7 +328,7 @@ function cancelRenaming() {
   }
 
   .tabs-content {
-    flex: 1;
+    height: 100%;
   }
 }
 </style>

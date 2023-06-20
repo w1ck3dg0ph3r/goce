@@ -43,7 +43,13 @@ const isActive = computed(() => tabsInjection.activeTab.value == tabData.value?.
 </script>
 
 <template>
-  <div v-show="isActive" style="width: 100%; height: 100%">
+  <div v-show="isActive" class="tab-content">
     <slot></slot>
   </div>
 </template>
+
+<style scoped lang="scss">
+.tab-content {
+  height: 100%;
+}
+</style>

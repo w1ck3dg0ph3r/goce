@@ -1,7 +1,4 @@
-import { SourceMap } from '@/components/editor/sourcemap'
 import type { CompilerInfo } from '@/services/api'
-
-import { Position } from 'monaco-editor'
 
 import { reactive } from 'vue'
 
@@ -16,10 +13,7 @@ class State {
   }
 
   compilers: Array<CompilerInfo> = new Array()
-  selectedCompiler: string = ''
-
-  sourceMap: SourceMap = new SourceMap()
-  cursorPosition: Position = new Position(1, 1)
+  defaultCompiler: string = ''
 
   status: Status = Status.Idle
 
@@ -27,7 +21,6 @@ class State {
   bottomPanelActiveTab: number = 0
 
   errorMessages = ''
-  buildOutput = ''
 
   sharedCodeLink: string | null = null
 

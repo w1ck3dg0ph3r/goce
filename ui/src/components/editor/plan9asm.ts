@@ -262,7 +262,6 @@ monaco.languages.registerFoldingRangeProvider(languageId, {
       region.end = model.getLineCount()
       regions.push(region)
     }
-    console.log(regions)
     return regions
   },
 })

@@ -35,7 +35,7 @@ const statusText = computed(() => {
     <div class="text">{{ statusText }}</div>
     <div class="spacer"></div>
     <div class="cursor-position">
-      Ln {{ State.cursorPosition.lineNumber }}, Col {{ State.cursorPosition.column }}
+      <!-- Ln {{ State.cursorPosition.lineNumber }}, Col {{ State.cursorPosition.column }} -->
     </div>
     <div>
       <button @click="State.bottomPanelVisible = !State.bottomPanelVisible">

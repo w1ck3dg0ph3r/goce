@@ -1,16 +1,27 @@
 <script lang="ts" setup>
-import State from '@/state'
 import GoceTabs from '@/components/ui/GoceTabs.vue'
 import GoceTab from '@/components/ui/GoceTab.vue'
 
 import BuildOutput from './BuildOutput.vue'
+
+const props = defineProps<{
+  buildOutput?: string
+}>()
+
+const emit = defineEmits<{
+  (e: 'jumpToSource', line: number, column?: number): void
+}>()
+
+function jumpToSource(line: number, column: number) {
+  emit('jumpToSource', line, column)
+}
 </script>
 
 <template>
   <div class="output-pane">
     <GoceTabs class="tabs">
-      <GoceTab title="Build Output" class="tab">
-        <BuildOutput :value="State.buildOutput"></BuildOutput>
+      <GoceTab title="Build Output" id="build-output" class="tab">
+        <BuildOutput :value="props.buildOutput" @jumpToSource="jumpToSource"></BuildOutput>
       </GoceTab>
     </GoceTabs>
   </div>
@@ -20,14 +31,10 @@ import BuildOutput from './BuildOutput.vue'
 @use '@/assets/themes/theme.scss';
 
 .output-pane {
-  display: flex;
+  flex: 1;
 
   .tabs {
-    flex: 1;
-    .tab {
-      width: 100%;
-      height: 100%;
-    }
+    height: 100%;
   }
 }
 </style>
