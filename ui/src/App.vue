@@ -6,9 +6,9 @@ import MenuBar from '@/components/menubar/MenuBar.vue'
 import StatusBar from '@/components/statusbar/StatusBar.vue'
 import GoceTabs from '@/components/ui/GoceTabs.vue'
 import GoceTab from '@/components/ui/GoceTab.vue'
+import SourceView from '@/components/SourceView.vue'
 
 import { onMounted, reactive } from 'vue'
-import SourceView from './components/SourceView.vue'
 
 interface SourceTab {
   id: symbol

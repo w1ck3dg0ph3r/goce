@@ -9,33 +9,39 @@ const emit = defineEmits<{
   (e: 'jumpToSource', line: number, column?: number): void
 }>()
 
-interface Line {
-  link?: {
-    text: string
-    line: number
-    column: number
-  }
+interface Token {
   text: string
+  line?: number
+  column?: number
 }
+
+type Line = Token[]
 
 const lines = computed((): Line[] => {
   if (!props.value) return []
   return props.value.split('\n').map((line) => {
-    let matches = line.match(/^\.\/main\.go:(\d+):(\d+)/)
+    let tokens: Token[] = []
+    let matches = line.matchAll(/\.\/main\.go:(\d+):(\d+)/g)
     if (matches) {
-      return {
-        link: {
-          text: matches[0],
-          line: parseInt(matches[1]),
-          column: parseInt(matches[2]),
-        },
-        text: line.substring(matches[0].length),
+      let pos = 0
+      for (let match of matches) {
+        if ((match.index || 0) > pos) {
+          tokens.push({ text: line.substring(pos, match.index) })
+        }
+        tokens.push({
+          text: match[0],
+          line: parseInt(match[1]),
+          column: parseInt(match[2]),
+        })
+        pos = (match.index || 0) + match[0].length
       }
+      if (pos < line.length) {
+        tokens.push({ text: line.substring(pos) })
+      }
+    } else {
+      tokens.push({ text: line })
     }
-    return {
-      link: undefined,
-      text: line,
-    }
+    return tokens
   })
 })
 </script>
@@ -44,14 +50,12 @@ const lines = computed((): Line[] => {
   <div class="build-output">
     <div class="lines">
       <div v-for="(l, i) of lines" :key="i" class="line">
-        <span v-if="l.link">
-          <a
-            :href="l.link.text"
-            @click.prevent="emit('jumpToSource', l.link.line, l.link.column)"
-            >{{ l.link.text }}</a
-          >
-        </span>
-        <span>{{ l.text }}</span>
+        <template v-for="t of l" :key="t">
+          <span v-if="t.line">
+            <a href="" @click.prevent="emit('jumpToSource', t.line, t.column)" v-text="t.text"> </a>
+          </span>
+          <span v-else v-text="t.text"></span>
+        </template>
       </div>
     </div>
   </div>
