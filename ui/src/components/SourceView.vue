@@ -12,6 +12,15 @@ import State, { Status } from '@/state'
 import { SourceMap } from './editor/sourcemap'
 
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { debounce } from 'lodash'
+
+const props = defineProps<{
+  code?: string
+}>()
+
+const emit = defineEmits<{
+  (e: 'update:code', code: string): void
+}>()
 
 const $codeEditor = ref<InstanceType<typeof CodeEditor> | null>(null)
 const $asmView = ref<InstanceType<typeof AsmView> | null>(null)
@@ -41,14 +50,13 @@ const compilerOptions = computed(() => {
 
 async function formatCode() {
   if (State.status == Status.Formatting) return
-  let code = $codeEditor.value?.getCode()
-  if (!code) return
+  if (!props.code) return
 
   State.status = Status.Formatting
   try {
-    let res = await API.formatCode(code, state.compiler)
+    let res = await API.formatCode(props.code, state.compiler)
     if (res.code !== '') {
-      $codeEditor.value?.setCode(res.code, true)
+      updateCode(res.code)
     }
     if (res.errors) {
       State.setError(res.errors)
@@ -64,13 +72,12 @@ async function formatCode() {
 
 async function compileCode() {
   if (State.status == Status.Compiling) return
-  let code = $codeEditor.value?.getCode()
-  if (!code) return
+  if (!props.code) return
 
   State.status = Status.Compiling
   state.buildOutput = ''
   try {
-    let compiled = await API.compileCode(code, state.compiler)
+    let compiled = await API.compileCode(props.code, state.compiler)
     state.buildOutput = compiled.buildOutput
     if (compiled.buildFailed) {
       State.status = Status.Error
@@ -104,8 +111,17 @@ function jumpToSource(line: number, column?: number) {
   $codeEditor.value?.jumpToLocation(line, column)
 }
 
+const debouncedCompileCode = debounce(compileCode, 1000)
+
+function updateCode(code: string) {
+  emit('update:code', code)
+  debouncedCompileCode()
+}
+
 onMounted(() => {
-  $codeEditor.value?.setCode(defaultCode, false)
+  if (state.compiler != '' && props.code != '') {
+    compileCode()
+  }
   watch(
     () => state.compiler,
     () => {
@@ -113,36 +129,6 @@ onMounted(() => {
     }
   )
 })
-
-const defaultCode = `package main
-
-import (
-	"fmt"
-	"math"
-)
-
-func fibonacci(n int) int {
-	if n <= 1 {
-		return n
-	}
-	return fibonacci(n-1) + fibonacci(n-2)
-}
-
-func square(n int) int {
-	return n * n
-}
-
-func sqrt(x float32) float32 {
-	return float32(math.Sqrt(float64(x)))
-}
-
-func main() {
-	res := fibonacci(3)
-	fmt.Println(res)
-	fmt.Println(sqrt(float32(res)))
-	fmt.Println(square(res))
-}
-`
 </script>
 
 <template>
@@ -166,11 +152,12 @@ func main() {
           <Panel>
             <CodeEditor
               ref="$codeEditor"
+              :code="props.code"
+              @update:code="updateCode"
               :sourceMap="state.sourceMap"
               @formatCode="formatCode"
               @lineHovered="state.sourceMap.highlightFromSource($event)"
               @revealAssembly="revealAssembly"
-              @change="compileCode"
             ></CodeEditor>
           </Panel>
           <Panel class="asm-view">

@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import State from '@/state'
 import API from '@/services/api'
+import bus from '@/services/bus'
 
 import MenuBar from '@/components/menubar/MenuBar.vue'
 import StatusBar from '@/components/statusbar/StatusBar.vue'
@@ -13,7 +14,7 @@ import { onMounted, reactive } from 'vue'
 interface SourceTab {
   id: symbol
   name: string
-  source: string
+  code: string
 }
 
 const tabs = reactive<Map<symbol, SourceTab>>(new Map())
@@ -24,15 +25,49 @@ function addTab() {
   tabs.set(tabId, {
     id: tabId,
     name: `source${nextTabNumber}`,
-    source: `// file ${nextTabNumber}\n\npackage main`,
+    code: defaultCode,
   })
   nextTabNumber++
 }
 
-addTab()
-
-onMounted(() => {
+onMounted(async () => {
   getAvailableCompilers()
+  if (!(await loadSharedCode())) {
+    addTab()
+  }
+})
+
+async function loadSharedCode(): Promise<boolean> {
+  try {
+    let sharedId = document.location.pathname.substring(1)
+    if (sharedId.length == 0) return false
+    let shared = await API.getSharedCode(sharedId)
+    if (!shared || shared.length == 0) return false
+    for (let tab of shared) {
+      let id = Symbol('source-tab')
+      tabs.set(id, {
+        id: id,
+        name: tab.name,
+        code: tab.code,
+      })
+    }
+    return true
+  } catch (e) {
+    State.appendError('cannot load shared code')
+    return false
+  }
+}
+
+bus.on('shareCode', async () => {
+  let shared = []
+  for (let v of tabs.values()) {
+    shared.push({
+      name: v.name,
+      code: v.code,
+    })
+  }
+  let link = await API.shareCode(shared)
+  State.sharedCodeLink = `${API.baseUrl}/${link}`
 })
 
 function onCloseTab(id: symbol) {
@@ -54,6 +89,36 @@ async function getAvailableCompilers() {
     State.appendError('cannot get compilers')
   }
 }
+
+const defaultCode = `package main
+
+import (
+	"fmt"
+	"math"
+)
+
+func fibonacci(n int) int {
+	if n <= 1 {
+		return n
+	}
+	return fibonacci(n-1) + fibonacci(n-2)
+}
+
+func square(n int) int {
+	return n * n
+}
+
+func sqrt(x float32) float32 {
+	return float32(math.Sqrt(float64(x)))
+}
+
+func main() {
+	res := fibonacci(3)
+	fmt.Println(res)
+	fmt.Println(sqrt(float32(res)))
+	fmt.Println(square(res))
+}
+`
 </script>
 
 <template>
@@ -70,7 +135,7 @@ async function getAvailableCompilers() {
       @tabRenamed="onTabRenamed"
     >
       <GoceTab v-for="[id, tab] in tabs.entries()" :key="id" :title="tab.name">
-        <SourceView class="source-view" :value="tab.source"></SourceView>
+        <SourceView class="source-view" v-model:code="tab.code"></SourceView>
       </GoceTab>
     </GoceTabs>
 

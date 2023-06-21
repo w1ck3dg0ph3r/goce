@@ -10,19 +10,18 @@ import type { SourceMap } from './editor/sourcemap'
 const cursorPosition = ref(new monaco.Position(1, 1))
 
 const props = defineProps<{
-  defaultCode?: string
+  code?: string
   sourceMap: SourceMap
 }>()
 
 const emit = defineEmits<{
+  (e: 'update:code', code: string): void
   (e: 'lineHovered', lineNumber: number): void
   (e: 'revealAssembly', sourceLineNumber: number): void
   (e: 'formatCode'): void
 }>()
 
 defineExpose({
-  getCode,
-  setCode,
   revealLine,
   jumpToLocation,
 })
@@ -72,14 +71,6 @@ const highlightedLines = computed(() => {
   return undefined
 })
 
-function getCode() {
-  return $editor.value?.getValue()
-}
-
-function setCode(code: string, keepCursor: boolean) {
-  $editor.value?.setValue(code, keepCursor)
-}
-
 function revealLine(line: number) {
   $editor.value?.getEditor().revealLineNearTop(line)
 }
@@ -98,7 +89,8 @@ function lineHovered(lineNumber: number) {
 <template>
   <MonacoEditor
     ref="$editor"
-    :value="props.defaultCode"
+    :code="props.code"
+    @update:code="emit('update:code', $event)"
     :theme="State.theme"
     language="go"
     @hover="lineHovered"
