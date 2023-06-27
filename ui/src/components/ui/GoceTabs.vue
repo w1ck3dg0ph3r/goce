@@ -328,6 +328,7 @@ function cancelRenaming() {
   }
 
   .tabs-content {
+    position: relative;
     height: 100%;
   }
 }

@@ -43,13 +43,20 @@ const isActive = computed(() => tabsInjection.activeTab.value == tabData.value?.
 </script>
 
 <template>
-  <div v-show="isActive" class="tab-content">
+  <div :class="{ hidden: !isActive }" class="tab-content">
     <slot></slot>
   </div>
 </template>
 
 <style scoped lang="scss">
 .tab-content {
+  position: absolute;
+  width: 100%;
   height: 100%;
+}
+
+.hidden {
+  opacity: 0;
+  z-index: -9999;
 }
 </style>
