@@ -7,7 +7,7 @@ import MenuBar from '@/components/menubar/MenuBar.vue'
 import StatusBar from '@/components/statusbar/StatusBar.vue'
 import GoceTabs from '@/components/ui/GoceTabs.vue'
 import GoceTab from '@/components/ui/GoceTab.vue'
-import SourceView from '@/components/SourceView.vue'
+import SourceView, { type SourceSettings } from '@/components/source-view/SourceView.vue'
 
 import { onMounted, reactive } from 'vue'
 
@@ -15,6 +15,7 @@ interface SourceTab {
   id: symbol
   name: string
   code: string
+  settings: SourceSettings
 }
 
 const tabs = reactive<Map<symbol, SourceTab>>(new Map())
@@ -26,12 +27,15 @@ function addTab() {
     id: tabId,
     name: `source${nextTabNumber}`,
     code: defaultCode,
+    settings: {
+      compiler: State.defaultCompiler,
+    },
   })
   nextTabNumber++
 }
 
 onMounted(async () => {
-  getAvailableCompilers()
+  await getAvailableCompilers()
   if (!(await loadSharedCode())) {
     addTab()
   }
@@ -43,13 +47,20 @@ async function loadSharedCode(): Promise<boolean> {
     if (sharedId.length == 0) return false
     let shared = await API.getSharedCode(sharedId)
     if (!shared || shared.length == 0) return false
-    for (let tab of shared) {
+    for (let sharedTab of shared) {
       let id = Symbol('source-tab')
-      tabs.set(id, {
+      let tab = {
         id: id,
-        name: tab.name,
-        code: tab.code,
-      })
+        name: sharedTab.name,
+        code: sharedTab.code,
+        settings: {
+          compiler: sharedTab.settings.compiler,
+        },
+      }
+      if (!isCompilerAvailable(tab.settings.compiler)) {
+        tab.settings.compiler = State.defaultCompiler
+      }
+      tabs.set(id, tab)
     }
     return true
   } catch (e) {
@@ -58,12 +69,19 @@ async function loadSharedCode(): Promise<boolean> {
   }
 }
 
+function isCompilerAvailable(compilerName: string): boolean {
+  return State.compilers.some((compiler) => compiler.name == compilerName)
+}
+
 bus.on('shareCode', async () => {
   let shared = []
   for (let v of tabs.values()) {
     shared.push({
       name: v.name,
       code: v.code,
+      settings: {
+        compiler: v.settings.compiler,
+      },
     })
   }
   let link = await API.shareCode(shared)
@@ -135,7 +153,11 @@ func main() {
       @tabRenamed="onTabRenamed"
     >
       <GoceTab v-for="[id, tab] in tabs.entries()" :key="id" :title="tab.name">
-        <SourceView class="source-view" v-model:code="tab.code"></SourceView>
+        <SourceView
+          class="source-view"
+          v-model:code="tab.code"
+          v-model:settings="tab.settings"
+        ></SourceView>
       </GoceTab>
     </GoceTabs>
 

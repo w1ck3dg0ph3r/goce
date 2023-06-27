@@ -116,6 +116,9 @@ interface FileLocation {
 interface SharedCodeTab {
   name: string
   code: string
+  settings: {
+    compiler: string
+  }
 }
 
 type SharedCode = SharedCodeTab[]

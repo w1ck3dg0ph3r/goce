@@ -4,48 +4,36 @@ import AsmView from '@/components/AsmView.vue'
 import OutputPane from '@/components/outputpane/OutputPane.vue'
 import { Panel, Splitter } from '@/components/ui/PanelSplitter.vue'
 import LoadingIndicator from '@/components/ui/LoadingIndicator.vue'
-import DropDown from '@/components/ui/DropDown.vue'
-import GoceButton from './ui/GoceButton.vue'
 
 import API from '@/services/api'
 import State, { Status } from '@/state'
-import { SourceMap } from './editor/sourcemap'
+import { SourceMap } from '@/components/editor/sourcemap'
 
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { onMounted, reactive, ref, watch } from 'vue'
 import { debounce } from 'lodash'
+import SourcePanel from './SourcePanel.vue'
+
+export interface SourceSettings {
+  compiler: string
+}
 
 const props = defineProps<{
-  code?: string
+  code: string
+  settings: SourceSettings
 }>()
 
 const emit = defineEmits<{
   (e: 'update:code', code: string): void
+  (e: 'update:settings', settings: SourceSettings): void
 }>()
 
 const $codeEditor = ref<InstanceType<typeof CodeEditor> | null>(null)
 const $asmView = ref<InstanceType<typeof AsmView> | null>(null)
 
 const state = reactive({
-  compiler: State.defaultCompiler,
-
+  settings: props.settings,
   buildOutput: '',
   sourceMap: new SourceMap(),
-})
-
-watch(
-  () => State.compilers,
-  () => {
-    if (state.compiler == '' && State.compilers.length > 0) {
-      state.compiler = State.compilers[0].name
-    }
-  }
-)
-
-const compilerOptions = computed(() => {
-  return State.compilers.map((c) => ({
-    value: c.name,
-    text: c.name,
-  }))
 })
 
 async function formatCode() {
@@ -54,7 +42,7 @@ async function formatCode() {
 
   State.status = Status.Formatting
   try {
-    let res = await API.formatCode(props.code, state.compiler)
+    let res = await API.formatCode(props.code, props.settings.compiler)
     if (res.code !== '') {
       updateCode(res.code)
     }
@@ -77,7 +65,7 @@ async function compileCode() {
   State.status = Status.Compiling
   state.buildOutput = ''
   try {
-    let compiled = await API.compileCode(props.code, state.compiler)
+    let compiled = await API.compileCode(props.code, props.settings.compiler)
     state.buildOutput = compiled.buildOutput
     if (compiled.buildFailed) {
       State.status = Status.Error
@@ -119,11 +107,11 @@ function updateCode(code: string) {
 }
 
 onMounted(() => {
-  if (state.compiler != '' && props.code != '') {
+  if (props.settings.compiler != '' && props.code != '') {
     compileCode()
   }
   watch(
-    () => state.compiler,
+    () => props.settings.compiler,
     () => {
       compileCode()
     }
@@ -133,18 +121,12 @@ onMounted(() => {
 
 <template>
   <div class="source-view">
-    <div class="menu">
-      <DropDown v-model="state.compiler" :options="compilerOptions"></DropDown>
-      <div class="spacer"></div>
-      <GoceButton @click="formatCode">
-        <i class="codicon codicon-json"></i>
-        <span>Format</span>
-      </GoceButton>
-      <GoceButton @click="compileCode">
-        <i class="codicon codicon-play"></i>
-        <span>Compile</span>
-      </GoceButton>
-    </div>
+    <SourcePanel
+      v-model:settings="state.settings"
+      @update:settings="emit('update:settings', state.settings)"
+      @format="formatCode"
+      @compile="compileCode"
+    ></SourcePanel>
 
     <Splitter horizontal class="main">
       <Panel :min-size="15">
@@ -187,17 +169,6 @@ onMounted(() => {
   flex-direction: column;
   background-color: theme.$backgroundColor;
   color-scheme: theme.$colorScheme;
-
-  .menu {
-    height: 2.5rem;
-    padding: 0.5rem;
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .spacer {
-    flex: 1;
-  }
 
   .asm-view {
     position: relative;
