@@ -1,95 +1,93 @@
-<script lang="ts">
-import MonacoEditor from '@/components/editor/MonacoEditor.vue'
-import State from '@/state'
-import bus from '@/services/bus'
-
-import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
-
-import { nextTick, ref, watch } from 'vue'
-
-monaco.languages.register({
-  id: 'go-build-output',
-})
-
-monaco.languages.registerLinkProvider('go-build-output', {
-  provideLinks(model) {
-    const links = new Array<monaco.languages.ILink>()
-    const lines = model.getLinesContent()
-    for (let lineNum = 0; lineNum < lines.length; lineNum++) {
-      const line = lines[lineNum]
-      let matches = line.match(/^\.\/main\.go:(\d+):(\d+)/)
-      if (matches) {
-        links.push({
-          range: new monaco.Range(lineNum + 1, 1, lineNum + 1, matches[0].length + 1),
-          url: `jumptosource:${matches[1]}:${matches[2]}`,
-        })
-      }
-    }
-    return { links }
-  },
-})
-
-monaco.editor.registerLinkOpener({
-  open(uri) {
-    if (uri.scheme == 'jumptosource') {
-      let loc = uri.path.split(':')
-      bus.emit('jumpToSourceLine', {
-        line: parseInt(loc[0]),
-        column: parseInt(loc[1]),
-      })
-      return true
-    }
-    return false
-  },
-})
-</script>
-
 <script setup lang="ts">
+import { computed } from 'vue'
+
 const props = defineProps<{
   value?: string
 }>()
 
-const $editor = ref<InstanceType<typeof MonacoEditor> | null>(null)
+const emit = defineEmits<{
+  (e: 'jumpToSource', line: number, column?: number): void
+}>()
 
-watch(
-  () => props.value,
-  (val) => {
-    $editor.value?.setValue(val || '')
-    nextTick(() => {
-      const ed = $editor.value?.getEditor()
-      if (ed) {
-        ed.setScrollTop(ed.getScrollHeight())
+interface Token {
+  text: string
+  line?: number
+  column?: number
+}
+
+type Line = Token[]
+
+const lines = computed((): Line[] => {
+  if (!props.value) return []
+  return props.value.split('\n').map((line) => {
+    let tokens: Token[] = []
+    let matches = line.matchAll(/\.\/main\.go:(\d+):(\d+)/g)
+    if (matches) {
+      let pos = 0
+      for (let match of matches) {
+        if ((match.index || 0) > pos) {
+          tokens.push({ text: line.substring(pos, match.index) })
+        }
+        tokens.push({
+          text: match[0],
+          line: parseInt(match[1]),
+          column: parseInt(match[2]),
+        })
+        pos = (match.index || 0) + match[0].length
       }
-    })
-  }
-)
+      if (pos < line.length) {
+        tokens.push({ text: line.substring(pos) })
+      }
+    } else {
+      tokens.push({ text: line })
+    }
+    return tokens
+  })
+})
 </script>
 
 <template>
-  <MonacoEditor
-    ref="$editor"
-    class="output-text"
-    :value="props.value"
-    language="go-build-output"
-    :theme="State.theme"
-    :options="{
-      fontSize: 12,
-      readOnly: true,
-      lineNumbers: 'off',
-      folding: false,
-      minimap: { enabled: false },
-      lineDecorationsWidth: 0,
-      occurrencesHighlight: false,
-      links: true,
-    }"
-  ></MonacoEditor>
+  <div class="build-output">
+    <div class="lines">
+      <div v-for="(l, i) of lines" :key="i" class="line">
+        <template v-for="t of l" :key="t">
+          <span v-if="t.line">
+            <a href="" @click.prevent="emit('jumpToSource', t.line, t.column)" v-text="t.text"> </a>
+          </span>
+          <span v-else v-text="t.text"></span>
+        </template>
+      </div>
+    </div>
+  </div>
 </template>
 
 <style scoped lang="scss">
 @use '@/assets/themes/theme.scss';
 
-.output-text {
-  width: 100%;
+.build-output {
   height: 100%;
+  background-color: theme.$editorBackgroundColor;
+  color: theme.$editorTextColor;
+  position: relative;
+
+  .lines {
+    position: absolute;
+    overflow-y: scroll;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    padding: 0.25rem;
+
+    font-family: 'Droid Sans Mono', 'monospace', monospace;
+    font-size: 10px;
+    line-height: 1.25em;
+
+    a {
+      color: theme.$editorTextColor;
+      font-weight: bold;
+      text-decoration: none;
+    }
+  }
 }
 </style>

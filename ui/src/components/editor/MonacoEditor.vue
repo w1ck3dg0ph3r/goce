@@ -1,21 +1,20 @@
 <script lang="ts">
+import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 import 'monaco-editor/esm/vs/editor/editor.all'
 import 'monaco-editor/esm/vs/basic-languages/go/go.contribution'
 
 import '@/components/editor/environment'
 import '@/components/editor/plan9asm'
-</script>
-
-<script setup lang="ts">
-import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 
 import { computed, onMounted, onUnmounted, ref, watchEffect, type WatchStopHandle } from 'vue'
 import { debounce, merge } from 'lodash'
+</script>
 
+<script setup lang="ts">
 const props = defineProps<{
   theme: string
   language: string
-  value?: string
+  code?: string
   options?: monaco.editor.IStandaloneEditorConstructionOptions
   decorations?: monaco.editor.IModelDeltaDecoration[]
   highlights?: Array<monaco.Range>
@@ -23,13 +22,12 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (event: 'change', code: string): void
+  (event: 'update:code', code: string): void
   (event: 'hover', line: number): void
 }>()
 
 defineExpose({
   getEditor,
-  getValue,
-  setValue,
 })
 
 const $editor = ref<HTMLElement | null>(null)
@@ -41,11 +39,26 @@ let hoveredLine = -1
 let resobs: ResizeObserver
 
 const unsubscribeHandlers = new Array<WatchStopHandle>()
-const debouncedLayoutEditor = debounce(layoutEditor, 75)
+const debouncedLayoutEditor = debounce(layoutEditor, 150)
 
 onMounted(() => {
   createEditor()
   layoutEditor()
+
+  editor.onDidChangeModelContent(() => {
+    if (props.code != editor.getValue()) {
+      emit('update:code', editor.getValue())
+    }
+  })
+
+  unsubscribeHandlers.push(
+    watchEffect(() => {
+      if (props.code != editor.getValue()) {
+        editor.getModel()?.setValue(props.code ?? '')
+        decorations.set(props.decorations || [])
+      }
+    })
+  )
 
   resobs = new ResizeObserver(debouncedLayoutEditor)
   resobs.observe($editor.value!.parentElement!)
@@ -104,7 +117,6 @@ const editorTheme = computed((): string => {
 
 function createEditor() {
   let options: monaco.editor.IStandaloneEditorConstructionOptions = {
-    value: props.value,
     theme: 'vs-dark',
     language: props.language,
     insertSpaces: false,
@@ -119,12 +131,6 @@ function createEditor() {
 
   decorations = editor.createDecorationsCollection()
   highlightDecorations = editor.createDecorationsCollection()
-
-  editor.onDidChangeModelContent(
-    debounce(() => {
-      emit('change', editor.getValue())
-    }, 1000)
-  )
 
   editor.onMouseMove((ev) => {
     const lineNum = ev.target?.position?.lineNumber || -1
@@ -147,17 +153,6 @@ function layoutEditor() {
 
 function getEditor(): monaco.editor.IStandaloneCodeEditor {
   return editor
-}
-
-function getValue(): string {
-  return editor?.getModel()?.getValue() ?? ''
-}
-
-function setValue(code: string, keepCursor: boolean = true) {
-  let pos: monaco.Position = new monaco.Position(1, 1)
-  if (keepCursor) pos = editor.getPosition() ?? pos
-  editor.getModel()?.setValue(code)
-  if (keepCursor) editor.setPosition(pos)
 }
 </script>
 

@@ -9,7 +9,7 @@
   --logoColor: #00acd7;
 
   --backgroundColor: #f7f7f7;
-  --backgroundColorHighlight: #cfcfcf;
+  --backgroundColorHighlight: #e4e4e4;
 
   --textColor: #efefef;
   --textColorInverted: #4e4e4e;
@@ -17,6 +17,7 @@
   --buttonColor: #00add8;
   --buttonColorHover: #5dc9e2;
   --buttonColorFocus: #028bad;
+  --buttonColorInactive: #acd6e0;
 
   --editorBackgroundColor: #ffffff;
   --editorTextColor: #111111;
@@ -32,14 +33,15 @@
   --logoColor: #a8a8a8;
 
   --backgroundColor: #2d2d2d;
-  --backgroundColorHighlight: #4b4b4b;
+  --backgroundColorHighlight: #343434;
 
   --textColor: #c7c7c7;
   --textColorInverted: #505050;
 
-  --buttonColor: #3d3d3d;
-  --buttonColorHover: #4b4b4b;
+  --buttonColor: #4b4b4b;
+  --buttonColorHover: #3d3d3d;
   --buttonColorFocus: #6e6e6e;
+  --buttonColorInactive: #363636;
 
   --editorBackgroundColor: #1e1e1e;
   --editorTextColor: #d6d6d6;
@@ -62,6 +64,7 @@ $textColorInverted: var(--textColorInverted);
 $buttonColor: var(--buttonColor);
 $buttonColorHover: var(--buttonColorHover);
 $buttonColorFocus: var(--buttonColorFocus);
+$buttonColorInactive: var(--buttonColorInactive);
 
 $editorBackgroundColor: var(--editorBackgroundColor);
 $editorTextColor: var(--editorTextColor);

@@ -1,7 +1,7 @@
 <script setup lang="ts"></script>
 
 <template>
-  <button class="menu-button">
+  <button class="button">
     <slot></slot>
   </button>
 </template>
@@ -9,9 +9,7 @@
 <style scoped lang="scss">
 @use '@/assets/themes/theme.scss';
 
-@use 'sass:color';
-
-.menu-button {
+.button {
   display: flex;
   align-items: center;
   gap: 0.2rem;

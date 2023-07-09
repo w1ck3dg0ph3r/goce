@@ -49,10 +49,10 @@ export class API {
     return await res.json()
   }
 
-  async shareCode(code: string): Promise<string> {
+  async shareCode(code: SharedCode): Promise<string> {
     const res = await fetch(`${this.baseUrl}/api/shared`, {
       method: 'POST',
-      body: code,
+      body: JSON.stringify(code),
     })
     if (!res.ok) {
       throw Error('cannot share code')
@@ -61,12 +61,12 @@ export class API {
     return shared.id
   }
 
-  async getSharedCode(id: string): Promise<string> {
+  async getSharedCode(id: string): Promise<SharedCode> {
     const res = await fetch(`${this.baseUrl}/api/shared/${id}`)
     if (!res.ok) {
       throw Error('cannot get shared code')
     }
-    return await res.text()
+    return await res.json()
   }
 }
 
@@ -112,6 +112,16 @@ interface FileLocation {
   l: number
   c: number
 }
+
+interface SharedCodeTab {
+  name: string
+  code: string
+  settings: {
+    compiler: string
+  }
+}
+
+type SharedCode = SharedCodeTab[]
 
 const api = new API()
 export default api

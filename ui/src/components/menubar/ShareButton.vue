@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import MenuButton from './MenuButton.vue'
+import GoceButton from '@/components/ui/GoceButton.vue'
 import bus from '@/services/bus'
 import State from '@/state'
 
@@ -41,7 +41,7 @@ async function shareCode() {
 </script>
 
 <template>
-  <MenuButton @click="shareCode">
+  <GoceButton @click="shareCode">
     <i class="codicon codicon-cloud-upload"></i>
     <span v-text="shareButtonText"></span>
     <input
@@ -55,7 +55,7 @@ async function shareCode() {
       :value="State.sharedCodeLink"
       :style="{ width: `${inputWidth}px` }"
     />
-  </MenuButton>
+  </GoceButton>
 </template>
 
 <style scoped lang="scss">
