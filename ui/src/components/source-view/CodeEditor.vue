@@ -2,10 +2,10 @@
 import State from '@/state'
 
 import MonacoEditor from '@/components/editor/MonacoEditor.vue'
+import type { SourceMap } from '@/components/editor/sourcemap'
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 
 import { computed, onMounted, ref } from 'vue'
-import type { SourceMap } from './editor/sourcemap'
 
 const cursorPosition = ref(new monaco.Position(1, 1))
 
@@ -16,6 +16,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:code', code: string): void
+  (e: 'cursorMoved', position: monaco.Position): void
   (e: 'lineHovered', lineNumber: number): void
   (e: 'revealAssembly', sourceLineNumber: number): void
   (e: 'formatCode'): void
@@ -61,6 +62,7 @@ onMounted(() => {
   editor.onDidChangeCursorPosition((ev) => {
     lineHasAssembly.set(props.sourceMap.map.has(ev.position.lineNumber))
     cursorPosition.value = ev.position
+    emit('cursorMoved', cursorPosition.value)
   })
 })
 

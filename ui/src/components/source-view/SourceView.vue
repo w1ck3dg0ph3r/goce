@@ -1,17 +1,19 @@
 <script lang="ts" setup>
-import CodeEditor from '@/components/CodeEditor.vue'
-import AsmView from '@/components/AsmView.vue'
 import OutputPane from '@/components/outputpane/OutputPane.vue'
+import StatusBar, { Status } from '@/components/statusbar/StatusBar.vue'
 import { Panel, Splitter } from '@/components/ui/PanelSplitter.vue'
 import LoadingIndicator from '@/components/ui/LoadingIndicator.vue'
 
+import SourcePanel from './SourcePanel.vue'
+import CodeEditor from './CodeEditor.vue'
+import AsmView from './AsmView.vue'
+
 import API from '@/services/api'
-import State, { Status } from '@/state'
+import State from '@/state'
 import { SourceMap } from '@/components/editor/sourcemap'
 
 import { onMounted, reactive, ref, watch } from 'vue'
 import { debounce } from 'lodash'
-import SourcePanel from './SourcePanel.vue'
 
 export interface SourceSettings {
   compiler: string
@@ -34,13 +36,20 @@ const state = reactive({
   settings: props.settings,
   buildOutput: '',
   sourceMap: new SourceMap(),
+
+  status: Status.Idle,
+  bottomPanelVisible: true,
+  cursorPosition: {
+    lineNumber: 1,
+    column: 1,
+  },
 })
 
 async function formatCode() {
-  if (State.status == Status.Formatting) return
+  if (state.status == Status.Formatting) return
   if (!props.code) return
 
-  State.status = Status.Formatting
+  state.status = Status.Formatting
   try {
     let res = await API.formatCode(props.code, props.settings.compiler)
     if (res.code !== '') {
@@ -54,29 +63,29 @@ async function formatCode() {
   } catch (e) {
     State.appendError('cannot format code')
   } finally {
-    State.status = Status.Idle
+    state.status = Status.Idle
   }
 }
 
 async function compileCode() {
-  if (State.status == Status.Compiling) return
+  if (state.status == Status.Compiling) return
   if (!props.code) return
 
-  State.status = Status.Compiling
+  state.status = Status.Compiling
   state.buildOutput = ''
   try {
     let compiled = await API.compileCode(props.code, props.settings.compiler)
     state.buildOutput = compiled.buildOutput
     if (compiled.buildFailed) {
-      State.status = Status.Error
+      state.status = Status.Error
       state.sourceMap.assembly = ''
       return
     }
     state.sourceMap.update(compiled)
-    State.status = Status.Idle
+    state.status = Status.Idle
   } catch (e) {
     State.appendError('cannot compile code')
-    State.status = Status.Error
+    state.status = Status.Error
   }
 }
 
@@ -138,6 +147,7 @@ onMounted(() => {
               @update:code="updateCode"
               :sourceMap="state.sourceMap"
               @formatCode="formatCode"
+              @cursorMoved="state.cursorPosition = $event"
               @lineHovered="state.sourceMap.highlightFromSource($event)"
               @revealAssembly="revealAssembly"
             ></CodeEditor>
@@ -149,15 +159,23 @@ onMounted(() => {
               @lineHovered="state.sourceMap.highlightFromAssembly($event)"
               @revealSource="revealSource"
             ></AsmView>
-            <LoadingIndicator v-if="State.status == Status.Compiling"></LoadingIndicator>
+            <LoadingIndicator v-if="state.status == Status.Compiling"></LoadingIndicator>
           </Panel>
         </Splitter>
       </Panel>
 
-      <Panel v-if="State.bottomPanelVisible" :min-size="15" :size="25">
+      <Panel v-if="state.bottomPanelVisible" :min-size="15" :size="25">
         <OutputPane :buildOutput="state.buildOutput" @jumpToSource="jumpToSource"></OutputPane>
       </Panel>
     </Splitter>
+    <StatusBar
+      :state="{
+        status: state.status,
+        bottomPaneVisible: state.bottomPanelVisible,
+        cursorPosition: state.cursorPosition,
+      }"
+      @toggleBottomPanel="state.bottomPanelVisible = !state.bottomPanelVisible"
+    ></StatusBar>
   </div>
 </template>
 

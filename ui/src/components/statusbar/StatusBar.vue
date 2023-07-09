@@ -1,13 +1,38 @@
-<script setup lang="ts">
-import State, { Status } from '@/state'
+<script lang="ts">
 import { computed } from 'vue'
 
+export enum Status {
+  Idle,
+  Formatting,
+  Compiling,
+  Error,
+}
+
+export interface StatusBarState {
+  status: Status
+  bottomPaneVisible: boolean
+  cursorPosition: {
+    lineNumber: number
+    column: number
+  }
+}
+</script>
+
+<script setup lang="ts">
+const props = defineProps<{
+  state: StatusBarState
+}>()
+
+const emit = defineEmits<{
+  (e: 'toggleBottomPanel'): void
+}>()
+
 const isError = computed(() => {
-  return State.status == Status.Error
+  return props.state.status == Status.Error
 })
 
 const statusIcon = computed(() => {
-  switch (State.status) {
+  switch (props.state.status) {
     case (Status.Formatting, Status.Compiling):
       return 'codicon-sync animated'
     case Status.Error:
@@ -18,7 +43,7 @@ const statusIcon = computed(() => {
 })
 
 const statusText = computed(() => {
-  switch (State.status) {
+  switch (props.state.status) {
     case Status.Formatting:
       return 'Formatting...'
     case Status.Compiling:
@@ -35,13 +60,13 @@ const statusText = computed(() => {
     <div class="text">{{ statusText }}</div>
     <div class="spacer"></div>
     <div class="cursor-position">
-      <!-- Ln {{ State.cursorPosition.lineNumber }}, Col {{ State.cursorPosition.column }} -->
+      Ln {{ props.state.cursorPosition.lineNumber }}, Col {{ props.state.cursorPosition.column }}
     </div>
     <div>
-      <button @click="State.bottomPanelVisible = !State.bottomPanelVisible">
+      <button @click="emit('toggleBottomPanel')">
         <i
           class="codicon"
-          :class="`codicon-chevron-${State.bottomPanelVisible ? 'down' : 'up'}`"
+          :class="`codicon-chevron-${props.state.bottomPaneVisible ? 'down' : 'up'}`"
         ></i>
       </button>
     </div>

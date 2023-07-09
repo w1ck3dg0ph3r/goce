@@ -5,7 +5,7 @@ import MonacoEditor from '@/components/editor/MonacoEditor.vue'
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 
 import { onMounted, ref } from 'vue'
-import type { SourceMap } from './editor/sourcemap'
+import type { SourceMap } from '@/components/editor/sourcemap'
 
 const props = defineProps<{
   sourceMap: SourceMap

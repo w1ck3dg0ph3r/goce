@@ -12,7 +12,7 @@ const emit = defineEmits<{
   (e: 'jumpToSource', line: number, column?: number): void
 }>()
 
-function jumpToSource(line: number, column: number) {
+function jumpToSource(line: number, column?: number) {
   emit('jumpToSource', line, column)
 }
 </script>
