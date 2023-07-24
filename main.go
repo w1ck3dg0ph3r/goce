@@ -15,12 +15,20 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/etag"
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+
+	"github.com/w1ck3dg0ph3r/goce/compilers"
 )
 
 //go:embed ui/dist
 var distFS embed.FS
 
 func main() {
+	cfg, err := ReadConfig()
+	if err != nil {
+		fmt.Printf("%v\n", err)
+		os.Exit(1)
+	}
+
 	app := fiber.New(fiber.Config{
 		AppName:       "GoCE v0.0.1",
 		CaseSensitive: true,
@@ -36,6 +44,17 @@ func main() {
 	app.Use(etag.New(etag.Config{Weak: true}))
 	app.Use(sanityCheck())
 
+	compilersSvc, err := compilers.New(&compilers.Config{
+		SearchGoPath:            cfg.Compilers.SearchGoPath,
+		SearchSDKPath:           cfg.Compilers.SearchSDKPath,
+		LocalCompilers:          cfg.Compilers.LocalCompilers,
+		AdditionalArchitectures: cfg.Compilers.AdditionalArchitectures,
+	})
+	if err != nil {
+		fmt.Printf("compilers service: %v\n", err)
+		os.Exit(1)
+	}
+
 	compilationCache, err := NewCompilationCache("cache.db")
 	if err != nil {
 		fmt.Printf("compilation cache: %v", err.Error())
@@ -49,6 +68,9 @@ func main() {
 	}
 
 	api := &API{
+		Config: cfg,
+
+		CompilersSvc:     compilersSvc,
 		CompilationCache: compilationCache,
 		SharedCodeStore:  sharedCodeStore,
 	}
@@ -73,7 +95,7 @@ func main() {
 		compilationCache.Close()
 		doneCh <- struct{}{}
 	}()
-	if err := app.Listen(":9000"); err != nil {
+	if err := app.Listen(cfg.Listen); err != nil {
 		fmt.Printf("error: %v\n", err)
 	}
 	<-doneCh

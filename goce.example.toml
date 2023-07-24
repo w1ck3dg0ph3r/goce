@@ -1,0 +1,20 @@
+# Address and/or port to listen on.
+Listen = ":9000"
+
+# TTL of the compilation result cache.
+CompilationCacheTTL = "2h"
+
+# TTL of the shared code.
+SharedCodeTTL = "24h"
+
+[Compilers]
+SearchGoPath = false # Search $PATH for go compilers.
+SearchSDKPath = true # Search $HOME/sdk/go* for go compilers.
+
+# Paths of local go compiler executables.
+LocalCompilers = [
+  "/usr/bin/go",
+]
+
+# Add supported cross-compilation architectures.
+AdditionalArchitectures = true
