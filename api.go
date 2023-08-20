@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/gofiber/fiber/v2"
@@ -13,14 +12,12 @@ import (
 )
 
 type API struct {
+	Config *Config
+
+	CompilersSvc     *compilers.CompilersSvc
 	CompilationCache *CompilationCache
 	SharedCodeStore  *SharedCodeStore
 }
-
-const (
-	CompilationCacheTTL = 2 * time.Hour
-	SharedCodeTTL       = 24 * time.Hour
-)
 
 func (api *API) GetCompilers(ctx *fiber.Ctx) error {
 	type CompilerInfo struct {
@@ -28,7 +25,7 @@ func (api *API) GetCompilers(ctx *fiber.Ctx) error {
 		compilers.CompilerInfo
 	}
 	type Response []CompilerInfo
-	list := compilers.List()
+	list := api.CompilersSvc.List()
 	res := make(Response, 0, len(list))
 	for i := range list {
 		res = append(res, CompilerInfo{
@@ -56,7 +53,7 @@ func (api *API) Format(ctx *fiber.Ctx) error {
 	}
 
 	formattedCode, err := format.Source([]byte(req.Code), format.Options{
-		LangVersion: gofumptVersionForCompiler(req.Name),
+		LangVersion: api.gofumptVersionForCompiler(req.Name),
 		ExtraRules:  true,
 	})
 	res := Response{
@@ -90,9 +87,9 @@ func (api *API) Compile(ctx *fiber.Ctx) error {
 	}
 	code := []byte(req.Code)
 
-	compiler := compilers.Default()
+	compiler := api.CompilersSvc.Default()
 	if req.Name != "" {
-		compiler = compilers.Get(req.Name)
+		compiler = api.CompilersSvc.Get(req.Name)
 	}
 	if compiler == nil {
 		return fiber.NewError(fiber.StatusNotFound, fmt.Sprintf("compiler not found: %s", req.Name))
@@ -106,7 +103,7 @@ func (api *API) Compile(ctx *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
-	compConfig := compilers.Config{
+	compConfig := compilers.CompilerConfig{
 		Platform:     compInfo.Platform,
 		Architecture: compInfo.Architecture,
 	}
@@ -114,7 +111,7 @@ func (api *API) Compile(ctx *fiber.Ctx) error {
 	cacheValue.BuildOutput = string(compRes.BuildOutput)
 	if err != nil {
 		cacheValue.BuildFailed = true
-		if err := api.CompilationCache.Set(cacheKey, cacheValue, CompilationCacheTTL); err != nil {
+		if err := api.CompilationCache.Set(cacheKey, cacheValue, api.Config.CompilationCacheTTL); err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 		}
 		return ctx.JSON(Response{
@@ -130,7 +127,7 @@ func (api *API) Compile(ctx *fiber.Ctx) error {
 	parseRes := parser.Parse(compRes)
 	cacheValue.Result = parseRes
 
-	if err := api.CompilationCache.Set(cacheKey, cacheValue, CompilationCacheTTL); err != nil {
+	if err := api.CompilationCache.Set(cacheKey, cacheValue, api.Config.CompilationCacheTTL); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
@@ -148,7 +145,7 @@ func (api *API) ShareCode(ctx *fiber.Ctx) error {
 	val := SharedCodeValue{
 		Code: ctx.Body(),
 	}
-	if err := api.SharedCodeStore.Set(id, val, SharedCodeTTL); err != nil {
+	if err := api.SharedCodeStore.Set(id, val, api.Config.SharedCodeTTL); err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 	return ctx.JSON(Response{
@@ -172,13 +169,13 @@ func (api *API) GetSharedCode(ctx *fiber.Ctx) error {
 	return nil
 }
 
-func gofumptVersionForCompiler(name string) string {
+func (api *API) gofumptVersionForCompiler(name string) string {
 	const defaultVeriosn = "1.20"
 
 	if name == "" {
 		return defaultVeriosn
 	}
-	compiler := compilers.Get(name)
+	compiler := api.CompilersSvc.Get(name)
 	if compiler == nil {
 		return defaultVeriosn
 	}

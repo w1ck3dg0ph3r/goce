@@ -16,7 +16,7 @@ type localCompiler struct {
 	info CompilerInfo
 }
 
-func (c *localCompiler) Compile(ctx context.Context, config Config, code []byte) (Result, error) {
+func (c *localCompiler) Compile(ctx context.Context, config CompilerConfig, code []byte) (Result, error) {
 	tmpDir := filepath.Join(os.TempDir(), "goce")
 	if err := os.MkdirAll(tmpDir, 0o777); err != nil {
 		return Result{}, fmt.Errorf("create tmp dir: %w", err)

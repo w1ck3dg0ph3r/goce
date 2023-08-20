@@ -28,10 +28,19 @@ You will need [go](https://go.dev), [node](https://nodejs.org) and [pnpm](https:
     go build .
     ```
 
+## Configuration
+
+Goce can be configured via:
+- `goce.toml` file located in `$PWD`, `/etc/goce` or `$HOME/.config/goce`
+- environment variables
+- `.env` file
+
+See [goce.example.toml](./goce.example.toml), [.env.example](./.env.example) and [config.go](./config.go) for details.
+
 ### Notes:
 
-- Right now goce makes available the following go versions:
-    - default one found in `$PATH`
+- Right now goce supports the following go compilers:
+    - the one found in `$PATH`
     - all versions insalled in `~/sdk/go*` (the default location for [multiple go installations](https://go.dev/doc/manage-install#installing-multiple) on *nix systems)
 
 - goce stores compilation cache and shared code snippets in `cache.db` and `shared.db` respectively.
