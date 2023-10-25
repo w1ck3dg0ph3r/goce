@@ -57,18 +57,22 @@ function revealLine(lineNumber: number) {
 function lineHovered(lineNumber: number) {
   emit('lineHovered', lineNumber)
 }
+
+function lineAddress(lineNumber: number): string {
+  return props.sourceMap.assembly.addresses[lineNumber - 1] || ''
+}
 </script>
 
 <template>
   <MonacoEditor
     ref="$editor"
-    :code="props.sourceMap.assembly"
+    :code="props.sourceMap.assembly.code"
     :theme="State.theme"
     language="plan9asm"
     :options="{
       fontSize: 10,
       readOnly: true,
-      lineNumbers: 'off',
+      lineNumbers: lineAddress,
     }"
     @hover="lineHovered"
     :decorations="props.sourceMap.assemblyDecorations"
