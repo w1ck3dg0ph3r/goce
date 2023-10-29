@@ -3,40 +3,60 @@ import State from '@/state'
 import API from '@/services/api'
 import bus from '@/services/bus'
 
+import { Tab, SourceTab, DiffTab } from '@/tab'
+
 import MenuBar from '@/components/menubar/MenuBar.vue'
 import GoceTabs from '@/components/ui/GoceTabs.vue'
 import GoceTab from '@/components/ui/GoceTab.vue'
-import SourceView, { type SourceSettings } from '@/components/source-view/SourceView.vue'
+import SourceView from '@/components/source-view/SourceView.vue'
+import DiffView from '@/components/diff-view/DiffView.vue'
 
-import { onMounted, reactive } from 'vue'
+import { computed, onMounted, reactive } from 'vue'
 
-interface SourceTab {
-  id: symbol
-  name: string
-  code: string
-  settings: SourceSettings
+const tabs = reactive<Map<symbol, Tab>>(new Map())
+let nextSourceTabNumber = 1
+let nextDiffTabNumber = 1
+
+const sourceTabs = computed(() => {
+  let m = new Map<symbol, SourceTab>()
+  for (let tab of tabs.values()) {
+    if (tab instanceof SourceTab) {
+      m.set(tab.id, tab)
+    }
+  }
+  return m
+})
+
+function addSourceTab() {
+  const tabId = Symbol('source-tab')
+  const tab = new SourceTab(tabId, `source${nextSourceTabNumber}`, defaultCode, {
+    compiler: State.defaultCompiler,
+  })
+  tabs.set(tabId, tab)
+  nextSourceTabNumber++
+  return tab
 }
 
-const tabs = reactive<Map<symbol, SourceTab>>(new Map())
-let nextTabNumber = 1
-
-function addTab() {
-  const tabId = Symbol('source-tab')
-  tabs.set(tabId, {
-    id: tabId,
-    name: `source${nextTabNumber}`,
-    code: defaultCode,
-    settings: {
-      compiler: State.defaultCompiler,
-    },
-  })
-  nextTabNumber++
+function addDiffTab(sourceTabId: symbol) {
+  const tabId = Symbol('diff-tab')
+  tabs.set(
+    tabId,
+    new DiffTab(tabId, `diff${nextDiffTabNumber}`, {
+      original: Symbol(),
+      modified: sourceTabId,
+      inline: false,
+    })
+  )
+  nextDiffTabNumber++
 }
 
 onMounted(async () => {
   await getAvailableCompilers()
   if (!(await loadSharedCode())) {
-    addTab()
+    addSourceTab()
+    let tab2 = addSourceTab()
+    tab2.code = tab2.code.replace('*', '/')
+    // addDiffTab()
   }
 })
 
@@ -48,14 +68,7 @@ async function loadSharedCode(): Promise<boolean> {
     if (!shared || shared.length == 0) return false
     for (let sharedTab of shared) {
       let id = Symbol('source-tab')
-      let tab = {
-        id: id,
-        name: sharedTab.name,
-        code: sharedTab.code,
-        settings: {
-          compiler: sharedTab.settings.compiler,
-        },
-      }
+      let tab = new SourceTab(id, sharedTab.name, sharedTab.code, sharedTab.settings)
       if (!isCompilerAvailable(tab.settings.compiler)) {
         tab.settings.compiler = State.defaultCompiler
       }
@@ -75,13 +88,15 @@ function isCompilerAvailable(compilerName: string): boolean {
 bus.on('shareCode', async () => {
   let shared = []
   for (let v of tabs.values()) {
-    shared.push({
-      name: v.name,
-      code: v.code,
-      settings: {
-        compiler: v.settings.compiler,
-      },
-    })
+    if (v instanceof SourceTab) {
+      shared.push({
+        name: v.name,
+        code: v.code,
+        settings: {
+          compiler: v.settings.compiler,
+        },
+      })
+    }
   }
   let link = await API.shareCode(shared)
   State.sharedCodeLink = `${API.baseUrl}/${link}`
@@ -147,16 +162,25 @@ func main() {
       closable
       renameable
       newTabButton
-      @newTabClicked="addTab"
+      @newTabClicked="addSourceTab"
       @closeTabClicked="onCloseTab"
       @tabRenamed="onTabRenamed"
     >
       <GoceTab v-for="[id, tab] in tabs.entries()" :key="id" :title="tab.name">
         <SourceView
+          v-if="tab instanceof SourceTab"
           class="source-view"
           v-model:code="tab.code"
           v-model:settings="tab.settings"
+          v-model:sourceMap="tab.sourceMap"
+          @diff="addDiffTab(id)"
         ></SourceView>
+        <DiffView
+          v-if="tab instanceof DiffTab"
+          :tabs="sourceTabs"
+          v-model:settings="tab.settings"
+          class="diff-view"
+        ></DiffView>
       </GoceTab>
     </GoceTabs>
   </div>
@@ -178,7 +202,8 @@ func main() {
     flex: 1;
   }
 
-  .source-view {
+  .source-view,
+  .diff-view {
     height: 100%;
   }
 }

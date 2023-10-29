@@ -171,8 +171,7 @@ function getEditor(): monaco.editor.IStandaloneCodeEditor {
   :deep(.line-highlight) {
     background-color: #007acc;
     width: 5px !important;
-    left: inherit !important;
-    right: 1px !important;
+    margin-left: 2px !important;
   }
 
   :deep(.block-highlight) {

@@ -4,29 +4,28 @@ import StatusBar, { Status } from '@/components/statusbar/StatusBar.vue'
 import { Panel, Splitter } from '@/components/ui/PanelSplitter.vue'
 import LoadingIndicator from '@/components/ui/LoadingIndicator.vue'
 
+import type { SourceSettings } from '@/tab'
 import SourcePanel from './SourcePanel.vue'
 import CodeEditor from './CodeEditor.vue'
 import AsmView from './AsmView.vue'
 
 import API from '@/services/api'
 import State from '@/state'
-import { SourceMap } from '@/components/editor/sourcemap'
+import type { SourceMap } from '@/components/editor/sourcemap'
 
 import { onMounted, reactive, ref, watch } from 'vue'
 import { debounce } from 'lodash'
 
-export interface SourceSettings {
-  compiler: string
-}
-
 const props = defineProps<{
   code: string
   settings: SourceSettings
+  sourceMap: SourceMap
 }>()
 
 const emit = defineEmits<{
   (e: 'update:code', code: string): void
   (e: 'update:settings', settings: SourceSettings): void
+  (e: 'diff'): void
 }>()
 
 const $codeEditor = ref<InstanceType<typeof CodeEditor> | null>(null)
@@ -35,7 +34,7 @@ const $asmView = ref<InstanceType<typeof AsmView> | null>(null)
 const state = reactive({
   settings: props.settings,
   buildOutput: '',
-  sourceMap: new SourceMap(),
+  sourceMap: props.sourceMap,
 
   status: Status.Idle,
   bottomPanelVisible: true,
@@ -128,6 +127,7 @@ onMounted(() => {
     <SourcePanel
       v-model:settings="state.settings"
       @update:settings="emit('update:settings', state.settings)"
+      @diff="emit('diff')"
       @format="formatCode"
       @compile="compileCode"
     ></SourcePanel>

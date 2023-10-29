@@ -1,28 +1,20 @@
 <script setup lang="ts">
-import { keyBy } from 'lodash'
 import { computed, ref } from 'vue'
 
-interface Option {
-  value: string
-  text?: string
-}
-
 const props = defineProps<{
-  modelValue: string
-  options?: Option[]
+  modelValue: number
+  options: string[]
 }>()
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: string): void
+  (e: 'update:modelValue', value: number): void
 }>()
 
 const $dropdown = ref<HTMLElement | null>(null)
-const options = computed(() => {
-  return keyBy(props.options, (o) => o.value)
-})
 let menuVisible = ref(false)
+
 const selectedText = computed(() => {
-  return options.value[props.modelValue]?.text || ''
+  return props.options[props.modelValue] || ''
 })
 
 function toggleMenu() {
@@ -37,8 +29,8 @@ function closeMenu() {
   menuVisible.value = false
 }
 
-function selectOption(value: string) {
-  emit('update:modelValue', value)
+function selectOption(index: number) {
+  emit('update:modelValue', index)
   closeMenu()
 }
 </script>
@@ -59,12 +51,12 @@ function selectOption(value: string) {
     <div class="menu" v-show="menuVisible">
       <div
         class="option"
-        :class="{ active: o.value == props.modelValue }"
-        v-for="o of options"
-        :key="o.value"
-        @click.stop="selectOption(o.value)"
+        :class="{ active: i == props.modelValue }"
+        v-for="(text, i) of options"
+        :key="i"
+        @click.stop="selectOption(i)"
       >
-        {{ o.text }}
+        {{ text }}
       </div>
     </div>
   </div>
@@ -119,7 +111,7 @@ $borderRadius: 3px;
   &.open {
     .button {
       background-color: theme.$buttonColor;
-      border-bottom: none;
+      border-bottom: 1px solid transparent;
       border-bottom-left-radius: 0;
       border-bottom-right-radius: 0;
     }
@@ -130,7 +122,7 @@ $borderRadius: 3px;
     width: $width;
     max-height: $maxMenuHeight;
     overflow-y: auto;
-    z-index: 10;
+    z-index: 999;
     background-color: theme.$buttonColor;
     border: 1px solid theme.$buttonColorFocus;
     border-top: none;
@@ -149,8 +141,7 @@ $borderRadius: 3px;
         background-color: theme.$buttonColorHover;
       }
       &.active {
-        border-top: 1px solid theme.$buttonColorFocus;
-        border-bottom: 1px solid theme.$buttonColorFocus;
+        background-color: theme.$buttonColorFocus;
       }
     }
   }

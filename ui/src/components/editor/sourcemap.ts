@@ -14,7 +14,7 @@ interface Mapping {
   }[]
 }
 
-export interface Assembly {
+interface Assembly {
   code: string
   addresses: Array<string>
 }
