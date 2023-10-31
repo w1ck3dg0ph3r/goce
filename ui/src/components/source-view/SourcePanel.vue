@@ -46,7 +46,7 @@ function selectCompiler(index: number) {
     <div class="labeled-item">
       <label>Compiler:</label>
       <DropDown
-        class="control"
+        class="control dropdown"
         :modelValue="selectedIndex"
         @update:modelValue="selectCompiler"
         :options="compilerNames"
@@ -107,6 +107,9 @@ $controlHeight: 1.5rem;
     }
     .control {
       height: $controlHeight;
+    }
+    .dropdown {
+      width: 12rem;
     }
   }
 

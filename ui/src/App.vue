@@ -54,9 +54,6 @@ onMounted(async () => {
   await getAvailableCompilers()
   if (!(await loadSharedCode())) {
     addSourceTab()
-    let tab2 = addSourceTab()
-    tab2.code = tab2.code.replace('*', '/')
-    // addDiffTab()
   }
 })
 

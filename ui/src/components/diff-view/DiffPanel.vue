@@ -83,7 +83,7 @@ function swapSources() {
     <div class="labeled-item">
       <label>Original:</label>
       <DropDown
-        class="control"
+        class="control dropdown"
         v-model="selected.original"
         @update:modelValue="updateSettings"
         :options="tabNames"
@@ -145,6 +145,9 @@ $controlHeight: 1.5rem;
     }
     .control {
       height: $controlHeight;
+    }
+    .dropdown {
+      width: 12rem;
     }
   }
 

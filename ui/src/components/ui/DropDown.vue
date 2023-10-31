@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 const props = defineProps<{
   modelValue: number
@@ -10,11 +10,26 @@ const emit = defineEmits<{
   (e: 'update:modelValue', value: number): void
 }>()
 
-const $dropdown = ref<HTMLElement | null>(null)
+const $button = ref<HTMLElement | null>(null)
+const $menu = ref<HTMLElement | null>(null)
 let menuVisible = ref(false)
 
 const selectedText = computed(() => {
   return props.options[props.modelValue] || ''
+})
+
+const sizeObserver = new ResizeObserver((entries) => {
+  if (entries.length == 0) return
+  const b = entries[0]
+  if ($menu.value) $menu.value.style.width = b.borderBoxSize[0]?.inlineSize + 'px'
+})
+
+onMounted(() => {
+  sizeObserver.observe($button.value!)
+})
+
+onUnmounted(() => {
+  sizeObserver.disconnect()
 })
 
 function toggleMenu() {
@@ -37,18 +52,17 @@ function selectOption(index: number) {
 
 <template>
   <div
-    ref="$dropdown"
     class="dropdown"
     :class="{ open: menuVisible }"
     @click="toggleMenu"
     @blur="closeMenu"
     tabindex="0"
   >
-    <div class="button">
+    <div ref="$button" class="button">
       <div class="value" v-text="selectedText"></div>
       <i class="codicon" :class="menuVisible ? 'codicon-triangle-up' : 'codicon-triangle-down'"></i>
     </div>
-    <div class="menu" v-show="menuVisible">
+    <div ref="$menu" class="menu" v-show="menuVisible">
       <div
         class="option"
         :class="{ active: i == props.modelValue }"
@@ -67,14 +81,14 @@ function selectOption(index: number) {
 
 @use 'sass:color';
 
-$width: 13rem;
+$minWidth: 5rem;
 $maxMenuHeight: 24rem;
 $fontSize: 0.9rem;
 $borderRadius: 3px;
 
 .dropdown {
   position: relative;
-  min-width: $width;
+  min-width: $minWidth;
 
   @include theme.font('heading');
   color: theme.$textColor;
@@ -100,6 +114,9 @@ $borderRadius: 3px;
 
     .value {
       flex: 1;
+      text-wrap: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
     }
   }
 
@@ -119,7 +136,7 @@ $borderRadius: 3px;
 
   .menu {
     position: absolute;
-    width: $width;
+    min-width: $minWidth;
     max-height: $maxMenuHeight;
     overflow-y: auto;
     z-index: 999;
@@ -134,6 +151,9 @@ $borderRadius: 3px;
     .option {
       color: theme.$textColor;
       font-size: $fontSize;
+      text-wrap: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
       cursor: pointer;
       padding: 0.25rem 0 0.25rem 0.5rem;
       background-color: theme.$buttonColor;
