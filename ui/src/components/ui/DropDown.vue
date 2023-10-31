@@ -1,28 +1,35 @@
 <script setup lang="ts">
-import { keyBy } from 'lodash'
-import { computed, ref } from 'vue'
-
-interface Option {
-  value: string
-  text?: string
-}
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 const props = defineProps<{
-  modelValue: string
-  options?: Option[]
+  modelValue: number
+  options: string[]
 }>()
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: string): void
+  (e: 'update:modelValue', value: number): void
 }>()
 
-const $dropdown = ref<HTMLElement | null>(null)
-const options = computed(() => {
-  return keyBy(props.options, (o) => o.value)
-})
+const $button = ref<HTMLElement | null>(null)
+const $menu = ref<HTMLElement | null>(null)
 let menuVisible = ref(false)
+
 const selectedText = computed(() => {
-  return options.value[props.modelValue]?.text || ''
+  return props.options[props.modelValue] || ''
+})
+
+const sizeObserver = new ResizeObserver((entries) => {
+  if (entries.length == 0) return
+  const b = entries[0]
+  if ($menu.value) $menu.value.style.width = b.borderBoxSize[0]?.inlineSize + 'px'
+})
+
+onMounted(() => {
+  sizeObserver.observe($button.value!)
+})
+
+onUnmounted(() => {
+  sizeObserver.disconnect()
 })
 
 function toggleMenu() {
@@ -37,34 +44,33 @@ function closeMenu() {
   menuVisible.value = false
 }
 
-function selectOption(value: string) {
-  emit('update:modelValue', value)
+function selectOption(index: number) {
+  emit('update:modelValue', index)
   closeMenu()
 }
 </script>
 
 <template>
   <div
-    ref="$dropdown"
     class="dropdown"
     :class="{ open: menuVisible }"
     @click="toggleMenu"
     @blur="closeMenu"
     tabindex="0"
   >
-    <div class="button">
+    <div ref="$button" class="button">
       <div class="value" v-text="selectedText"></div>
       <i class="codicon" :class="menuVisible ? 'codicon-triangle-up' : 'codicon-triangle-down'"></i>
     </div>
-    <div class="menu" v-show="menuVisible">
+    <div ref="$menu" class="menu" v-show="menuVisible">
       <div
         class="option"
-        :class="{ active: o.value == props.modelValue }"
-        v-for="o of options"
-        :key="o.value"
-        @click.stop="selectOption(o.value)"
+        :class="{ active: i == props.modelValue }"
+        v-for="(text, i) of options"
+        :key="i"
+        @click.stop="selectOption(i)"
       >
-        {{ o.text }}
+        {{ text }}
       </div>
     </div>
   </div>
@@ -75,14 +81,14 @@ function selectOption(value: string) {
 
 @use 'sass:color';
 
-$width: 13rem;
+$minWidth: 5rem;
 $maxMenuHeight: 24rem;
 $fontSize: 0.9rem;
 $borderRadius: 3px;
 
 .dropdown {
   position: relative;
-  min-width: $width;
+  min-width: $minWidth;
 
   @include theme.font('heading');
   color: theme.$textColor;
@@ -108,6 +114,9 @@ $borderRadius: 3px;
 
     .value {
       flex: 1;
+      text-wrap: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
     }
   }
 
@@ -119,7 +128,7 @@ $borderRadius: 3px;
   &.open {
     .button {
       background-color: theme.$buttonColor;
-      border-bottom: none;
+      border-bottom: 1px solid transparent;
       border-bottom-left-radius: 0;
       border-bottom-right-radius: 0;
     }
@@ -127,10 +136,10 @@ $borderRadius: 3px;
 
   .menu {
     position: absolute;
-    width: $width;
+    min-width: $minWidth;
     max-height: $maxMenuHeight;
     overflow-y: auto;
-    z-index: 10;
+    z-index: 999;
     background-color: theme.$buttonColor;
     border: 1px solid theme.$buttonColorFocus;
     border-top: none;
@@ -142,6 +151,9 @@ $borderRadius: 3px;
     .option {
       color: theme.$textColor;
       font-size: $fontSize;
+      text-wrap: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
       cursor: pointer;
       padding: 0.25rem 0 0.25rem 0.5rem;
       background-color: theme.$buttonColor;
@@ -149,8 +161,7 @@ $borderRadius: 3px;
         background-color: theme.$buttonColorHover;
       }
       &.active {
-        border-top: 1px solid theme.$buttonColorFocus;
-        border-bottom: 1px solid theme.$buttonColorFocus;
+        background-color: theme.$buttonColorFocus;
       }
     }
   }

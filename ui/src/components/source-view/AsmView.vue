@@ -4,7 +4,7 @@ import State from '@/state'
 import MonacoEditor from '@/components/editor/MonacoEditor.vue'
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import type { SourceMap } from '@/components/editor/sourcemap'
 
 const props = defineProps<{
@@ -57,18 +57,31 @@ function revealLine(lineNumber: number) {
 function lineHovered(lineNumber: number) {
   emit('lineHovered', lineNumber)
 }
+
+const lineNumbersMinChars = computed(() => {
+  let min = 0
+  for (let a of props.sourceMap.assembly.addresses) {
+    if (a.length > min) min = a.length
+  }
+  return min
+})
+
+function lineAddress(lineNumber: number): string {
+  return props.sourceMap.assembly.addresses[lineNumber - 1] || ''
+}
 </script>
 
 <template>
   <MonacoEditor
     ref="$editor"
-    :code="props.sourceMap.assembly"
+    :code="props.sourceMap.assembly.code"
     :theme="State.theme"
     language="plan9asm"
     :options="{
       fontSize: 10,
       readOnly: true,
-      lineNumbers: 'off',
+      lineNumbers: lineAddress,
+      lineNumbersMinChars: lineNumbersMinChars,
     }"
     @hover="lineHovered"
     :decorations="props.sourceMap.assemblyDecorations"

@@ -14,8 +14,13 @@ interface Mapping {
   }[]
 }
 
+interface Assembly {
+  code: string
+  addresses: Array<string>
+}
+
 export class SourceMap {
-  assembly: string
+  assembly: Assembly
   map: Map<number, Mapping>
   reverseMap: Map<number, number>
 
@@ -26,7 +31,7 @@ export class SourceMap {
   highlightedAssembly?: monaco.Range[]
 
   constructor() {
-    this.assembly = ''
+    this.assembly = { code: '', addresses: [] }
     this.map = new Map()
     this.reverseMap = new Map()
     this.sourceDecorations = new Array()
@@ -39,7 +44,15 @@ export class SourceMap {
   }
 
   update(compiled: CompilationResult) {
-    this.assembly = compiled.assembly || ''
+    if (compiled.buildFailed) {
+      this.assembly.code = ''
+      this.assembly.addresses.length = 0
+      this.assemblyDecorations.length = 0
+      if (this.highlightedAssembly) this.highlightedAssembly.length = 0
+      return
+    }
+
+    this.assembly = splitAssembly(compiled.assembly || '')
     this.map = new Map()
     this.reverseMap = new Map()
     if (compiled.mapping) {
@@ -68,12 +81,14 @@ export class SourceMap {
   highlightFromSource(lineNumber: number) {
     if (this.map.has(lineNumber)) {
       this.highlightedSource = new monaco.Range(lineNumber, 1, lineNumber, 1)
-      const asmRanges = this.map.get(lineNumber)!.ranges
-      const ranges = Array<monaco.Range>()
-      for (const r of asmRanges) {
-        ranges.push(new monaco.Range(r.start, 1, r.end, 1))
+      if (this.assembly.code.length > 0) {
+        const asmRanges = this.map.get(lineNumber)!.ranges
+        const ranges = Array<monaco.Range>()
+        for (const r of asmRanges) {
+          ranges.push(new monaco.Range(r.start, 1, r.end, 1))
+        }
+        this.highlightedAssembly = ranges
       }
-      this.highlightedAssembly = ranges
     } else {
       this.highlightedSource = undefined
       this.highlightedAssembly = undefined
@@ -117,7 +132,9 @@ export class SourceMap {
             hoverMessage: [
               { value: `\`${fc.name}\` ${fc.canInline ? 'can' : 'cannot'} be inlined` },
             ],
-            inlineClassName: fc.canInline ? 'inline-hover-can-inline' : 'inline-hover-cannot-inline',
+            inlineClassName: fc.canInline
+              ? 'inline-hover-can-inline'
+              : 'inline-hover-cannot-inline',
           },
         }
         if (fc.canInline) {
@@ -172,6 +189,23 @@ export class SourceMap {
       }
     }
     return decs
+  }
+}
+
+function splitAssembly(source: string): Assembly {
+  const lines = source.split('\n')
+  const code = new Array(lines.length)
+  const addresses = new Array(lines.length)
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].startsWith('0x')) {
+      ;[addresses[i], code[i]] = lines[i].split('\t')
+    } else {
+      ;[addresses[i], code[i]] = ['', lines[i]]
+    }
+  }
+  return {
+    code: code.join('\n'),
+    addresses: addresses,
   }
 }
 

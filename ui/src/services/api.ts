@@ -113,15 +113,26 @@ interface FileLocation {
   c: number
 }
 
-interface SharedCodeTab {
-  name: string
+export interface SharedCodeTab {
+  type: 'code'
   code: string
   settings: {
     compiler: string
   }
 }
 
-type SharedCode = SharedCodeTab[]
+export interface SharedDiffTab {
+  type: 'diff'
+  originalSourceName: string
+  modifiedSourceName: string
+  inline: boolean
+}
+
+export type SharedTab = {
+  name: string
+} & (SharedCodeTab | SharedDiffTab)
+
+export type SharedCode = Array<SharedTab>
 
 const api = new API()
 export default api
