@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import State from '@/state'
-import API from '@/services/api'
+import API, { type SharedCode, type SharedDiffTab, type SharedTab } from '@/services/api'
 import bus from '@/services/bus'
 
 import { Tab, SourceTab, DiffTab } from '@/tab'
@@ -27,6 +27,14 @@ const sourceTabs = computed(() => {
   return m
 })
 
+const sourceTabsByName = computed(() => {
+  let m = new Map<string, SourceTab>()
+  for (let [_, tab] of sourceTabs.value) {
+    m.set(tab.name, tab)
+  }
+  return m
+})
+
 function addSourceTab() {
   const tabId = Symbol('source-tab')
   const tab = new SourceTab(tabId, `source${nextSourceTabNumber}`, defaultCode, {
@@ -37,14 +45,14 @@ function addSourceTab() {
   return tab
 }
 
-function addDiffTab(sourceTabId: symbol) {
+function addDiffTab(originalId?: symbol, modifiedId?: symbol, inline?: boolean) {
   const tabId = Symbol('diff-tab')
   tabs.set(
     tabId,
     new DiffTab(tabId, `diff${nextDiffTabNumber}`, {
-      original: Symbol(),
-      modified: sourceTabId,
-      inline: false,
+      original: originalId || Symbol(),
+      modified: modifiedId || Symbol(),
+      inline: inline || false,
     })
   )
   nextDiffTabNumber++
@@ -58,24 +66,42 @@ onMounted(async () => {
 })
 
 async function loadSharedCode(): Promise<boolean> {
+  let shared: SharedCode
   try {
     let sharedId = document.location.pathname.substring(1)
     if (sharedId.length == 0) return false
-    let shared = await API.getSharedCode(sharedId)
+    shared = await API.getSharedCode(sharedId)
     if (!shared || shared.length == 0) return false
-    for (let sharedTab of shared) {
-      let id = Symbol('source-tab')
-      let tab = new SourceTab(id, sharedTab.name, sharedTab.code, sharedTab.settings)
-      if (!isCompilerAvailable(tab.settings.compiler)) {
-        tab.settings.compiler = State.defaultCompiler
-      }
-      tabs.set(id, tab)
-    }
-    return true
   } catch (e) {
     State.appendError('cannot load shared code')
     return false
   }
+
+  let diffTabs = new Array<SharedDiffTab>()
+
+  for (let sharedTab of shared) {
+    switch (sharedTab.type) {
+      case 'code':
+        let id = Symbol('source-tab')
+        let tab = new SourceTab(id, sharedTab.name, sharedTab.code, sharedTab.settings)
+        if (!isCompilerAvailable(tab.settings.compiler)) {
+          tab.settings.compiler = State.defaultCompiler
+        }
+        tabs.set(id, tab)
+        break
+      case 'diff':
+        diffTabs.push(sharedTab)
+        break
+    }
+  }
+
+  for (let sharedDiff of diffTabs) {
+    let ot = sourceTabsByName.value.get(sharedDiff.originalSourceName)?.id
+    let mt = sourceTabsByName.value.get(sharedDiff.modifiedSourceName)?.id
+    addDiffTab(ot, mt, sharedDiff.inline)
+  }
+
+  return true
 }
 
 function isCompilerAvailable(compilerName: string): boolean {
@@ -83,15 +109,24 @@ function isCompilerAvailable(compilerName: string): boolean {
 }
 
 bus.on('shareCode', async () => {
-  let shared = []
+  let shared = new Array<SharedTab>()
   for (let v of tabs.values()) {
     if (v instanceof SourceTab) {
       shared.push({
         name: v.name,
+        type: 'code',
         code: v.code,
         settings: {
           compiler: v.settings.compiler,
         },
+      })
+    } else if (v instanceof DiffTab) {
+      shared.push({
+        name: v.name,
+        type: 'diff',
+        originalSourceName: tabs.get(v.settings.original)?.name || '',
+        modifiedSourceName: tabs.get(v.settings.modified)?.name || '',
+        inline: v.settings.inline,
       })
     }
   }
@@ -170,7 +205,7 @@ func main() {
           v-model:code="tab.code"
           v-model:settings="tab.settings"
           v-model:sourceMap="tab.sourceMap"
-          @diff="addDiffTab(id)"
+          @diff="addDiffTab(undefined, id)"
         ></SourceView>
         <DiffView
           v-if="tab instanceof DiffTab"

@@ -25,7 +25,7 @@ const tabs = computed(() => Array.from(props.tabs.values()))
 const tabIds = computed(() => tabs.value.map((tab) => tab.id))
 const tabNames = computed(() => tabs.value.map((tab) => tab.name))
 
-const showInline = ref(false)
+const showInline = ref(props.settings.inline)
 
 onMounted(() => {
   if (props.settings.original) {
