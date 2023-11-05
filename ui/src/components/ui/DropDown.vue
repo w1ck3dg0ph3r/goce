@@ -114,7 +114,7 @@ $borderRadius: 3px;
 
     .value {
       flex: 1;
-      text-wrap: nowrap;
+      white-space: nowrap;
       text-overflow: ellipsis;
       overflow: hidden;
     }
@@ -151,12 +151,13 @@ $borderRadius: 3px;
     .option {
       color: theme.$textColor;
       font-size: $fontSize;
-      text-wrap: nowrap;
+      white-space: nowrap;
       text-overflow: ellipsis;
       overflow: hidden;
       cursor: pointer;
       padding: 0.25rem 0 0.25rem 0.5rem;
       background-color: theme.$buttonColor;
+      flex-shrink: 0;
       &:hover {
         background-color: theme.$buttonColorHover;
       }
