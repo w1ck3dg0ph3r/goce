@@ -95,6 +95,9 @@ function lineHovered(lineNumber: number) {
     @update:code="emit('update:code', $event)"
     :theme="State.theme"
     language="go"
+    :options="{
+      fontSize: 12,
+    }"
     @hover="lineHovered"
     :decorations="props.sourceMap.sourceDecorations"
     :highlights="highlightedLines"

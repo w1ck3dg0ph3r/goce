@@ -78,7 +78,7 @@ function lineAddress(lineNumber: number): string {
     :theme="State.theme"
     language="plan9asm"
     :options="{
-      fontSize: 10,
+      fontSize: 12,
       readOnly: true,
       lineNumbers: lineAddress,
       lineNumbersMinChars: lineNumbersMinChars,

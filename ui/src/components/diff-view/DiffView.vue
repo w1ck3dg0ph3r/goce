@@ -41,7 +41,7 @@ function applySettings(settings: DiffSettings) {
       :codeRight="codeRight"
       :theme="State.theme"
       :options="{
-        fontSize: 10,
+        fontSize: 12,
         readOnly: true,
         lineNumbers: 'off',
         automaticLayout: true,
