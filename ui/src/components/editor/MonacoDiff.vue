@@ -41,7 +41,7 @@ onMounted(() => {
 
   unsubscribeHandlers.push(
     watchEffect(() => {
-      editor.updateOptions({ theme: editorTheme.value })
+      monaco.editor.setTheme(editorTheme.value)
     })
   )
 
@@ -51,10 +51,12 @@ onMounted(() => {
     })
   )
 
-  unsubscribeHandlers.push(watchEffect(() => {
-    modelLeft.setValue(props.codeLeft || '')
-    modelRight.setValue(props.codeRight || '')
-  }))
+  unsubscribeHandlers.push(
+    watchEffect(() => {
+      modelLeft.setValue(props.codeLeft || '')
+      modelRight.setValue(props.codeRight || '')
+    })
+  )
 })
 
 onUnmounted(() => {
@@ -85,6 +87,7 @@ function createEditor() {
       enabled: false,
       showSlider: 'always',
     },
+    renderWhitespace: 'none',
   }
   options = merge(options, props.options)
   editor = monaco.editor.createDiffEditor($editor.value!, options)
@@ -120,7 +123,13 @@ function getEditor(): monaco.editor.IStandaloneDiffEditor {
 </template>
 
 <style lang="scss" scoped>
+$diagSize: 0.5em;
+
 .diff-editor {
   overflow: hidden;
+
+  :deep(.monaco-editor .diagonal-fill) {
+    background-size: $diagSize $diagSize;
+  }
 }
 </style>
