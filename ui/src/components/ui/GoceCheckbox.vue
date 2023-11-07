@@ -35,7 +35,7 @@ function onClick() {
   gap: 0.2rem;
 
   @include theme.font('heading');
-  color: theme.$buttonColor;
+  color: theme.$logoColor;
   font-size: 0.9rem;
 
   > i {
