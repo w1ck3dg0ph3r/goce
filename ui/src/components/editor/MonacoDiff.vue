@@ -24,8 +24,7 @@ defineExpose({
 
 const $editor = ref<HTMLElement | null>(null)
 let editor: monaco.editor.IStandaloneDiffEditor
-let modelLeft: monaco.editor.ITextModel
-let modelRight: monaco.editor.ITextModel
+let model: monaco.editor.IDiffEditorModel
 
 let resobs: ResizeObserver
 
@@ -53,8 +52,14 @@ onMounted(() => {
 
   unsubscribeHandlers.push(
     watchEffect(() => {
-      modelLeft.setValue(props.codeLeft || '')
-      modelRight.setValue(props.codeRight || '')
+      model.original.setValue(props.codeLeft || '')
+      editor.setModel(model)
+    })
+  )
+  unsubscribeHandlers.push(
+    watchEffect(() => {
+      model.modified.setValue(props.codeRight || '')
+      editor.setModel(model)
     })
   )
 })
@@ -92,13 +97,11 @@ function createEditor() {
   options = merge(options, props.options)
   editor = monaco.editor.createDiffEditor($editor.value!, options)
 
-  modelLeft = monaco.editor.createModel(props.codeLeft || '', 'plan9asm')
-  modelRight = monaco.editor.createModel(props.codeRight || '', 'plan9asm')
-
-  editor.setModel({
-    original: modelLeft,
-    modified: modelRight,
-  })
+  model = {
+    original: monaco.editor.createModel(props.codeLeft || '', 'plan9asm'),
+    modified: monaco.editor.createModel(props.codeRight || '', 'plan9asm'),
+  }
+  editor.setModel(model)
 }
 
 function layoutEditor() {
