@@ -4,29 +4,28 @@ $colors: #e6194b, #3cb44b, #ffe119, #4363d8, #f58231, #911eb4, #42d4f4, #f032e6,
   #469990, #dcbeff, #9a6324, #fffac8, #800000, #aaffc3, #808000, #ffd8b1, #000075, #a9a9a9, #ffffff,
   #000000;
 
+$canInline: #33b674;
+$cannotInline: #e51400;
+$inlinedCall: #00ff00;
+$escapesToHeap: #e59c00;
+
+$lightBackground: #ffffff;
+$darkBackground: #1e1e1e;
+
 @for $i from 1 through length($colors) {
   $c: nth($colors, $i);
 
   .monaco-editor .block-color-#{$i} {
-    background-color: color.change($c, $alpha: 0.1);
-  }
-
-  .monaco-editor .line-color-#{$i} {
-    background-color: color.change($c, $alpha: 0.1);
-    width: 5px !important;
-    margin-left: 3px;
+    $col: color.mix($c, $lightBackground, $weight: 50%);
+    background-color: color.change($col, $alpha: 0.3);
   }
 
   .monaco-editor .inline-hover-can-inline {
-    border-bottom: 1px #33b674 dotted;
+    border-bottom: 2px $canInline dotted;
   }
 
   .monaco-editor .inline-hover-cannot-inline {
-    border-bottom: 1px #e51400 dotted;
-  }
-
-  .monaco-editor .inline-hover-inlined-call {
-    border-bottom: 2px rgba(0, 128, 0, 0.3) solid;
+    border-bottom: 2px $cannotInline dotted;
   }
 
   .monaco-editor .inlinedcall {
@@ -38,6 +37,30 @@ $colors: #e6194b, #3cb44b, #ffe119, #4363d8, #f58231, #911eb4, #42d4f4, #f032e6,
   }
 
   .inline-hover-escape {
-    border-bottom: 2px #e59c00 solid;
+    border-bottom: 2px $escapesToHeap solid;
+  }
+
+  .theme-dark {
+    .monaco-editor .block-color-#{$i} {
+      $col: color.scale($c, $saturation: -25%);
+      $col: color.mix($col, $darkBackground, $weight: 25%);
+      background-color: color.change($col, $alpha: 0.3);
+    }
+
+    .monaco-editor .inline-hover-can-inline {
+      border-bottom-color: color.change($canInline, $alpha: 0.6);
+    }
+
+    .monaco-editor .inline-hover-cannot-inline {
+      border-bottom-color: color.change($cannotInline, $alpha: 0.5);
+    }
+
+    .monaco-editor .inlinedcall {
+      opacity: 0.5;
+    }
+
+    .inline-hover-escape {
+      border-bottom-color: color.change($escapesToHeap, $alpha: 0.5);
+    }
   }
 }
