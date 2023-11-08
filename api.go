@@ -68,8 +68,9 @@ func (api *API) Format(ctx *fiber.Ctx) error {
 
 func (api *API) Compile(ctx *fiber.Ctx) error {
 	type Request struct {
-		Name string `json:"name"`
-		Code string `json:"code"`
+		Name    string                    `json:"name"`
+		Options compilers.CompilerOptions `json:"options"`
+		Code    string                    `json:"code"`
 	}
 	type Response struct {
 		BuildFailed bool   `json:"buildFailed"`
@@ -108,6 +109,7 @@ func (api *API) Compile(ctx *fiber.Ctx) error {
 	compConfig := compilers.CompilerConfig{
 		Platform:     compInfo.Platform,
 		Architecture: compInfo.Architecture,
+		Options:      req.Options,
 	}
 	compRes, err := compiler.Compile(ctx.Context(), compConfig, code)
 	cacheValue.BuildOutput = string(compRes.BuildOutput)

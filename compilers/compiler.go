@@ -56,8 +56,15 @@ type CompilerVersion struct {
 }
 
 type CompilerConfig struct {
-	Platform     string `json:"platform"`
-	Architecture string `json:"architecture"`
+	Platform     string          `json:"platform"`
+	Architecture string          `json:"architecture"`
+	Options      CompilerOptions `json:"options"`
+}
+
+type CompilerOptions struct {
+	DisableInlining      bool   `json:"disableInlining"`
+	DisableOptimizations bool   `json:"disableOptimizations"`
+	Architecture         string `json:"architecture"`
 }
 
 type Result struct {

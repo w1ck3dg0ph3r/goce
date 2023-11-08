@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strings"
 )
 
 type localCompiler struct {
@@ -45,6 +46,16 @@ func (c *localCompiler) Compile(ctx context.Context, config CompilerConfig, code
 	if config.Architecture != c.info.Architecture {
 		buildEnv = append(buildEnv, fmt.Sprintf("GOARCH=%s", config.Architecture))
 	}
+	if config.Options.Architecture != "" {
+		switch config.Architecture {
+		case "amd64":
+			buildEnv = append(buildEnv, fmt.Sprintf("GOAMD64=%s", config.Options.Architecture))
+		case "386":
+			buildEnv = append(buildEnv, fmt.Sprintf("GO386=%s", config.Options.Architecture))
+		case "arm":
+			buildEnv = append(buildEnv, fmt.Sprintf("GOARM=%s", config.Options.Architecture))
+		}
+	}
 
 	res := Result{
 		CompilerInfo:   c.info,
@@ -62,7 +73,19 @@ func (c *localCompiler) Compile(ctx context.Context, config CompilerConfig, code
 		return res, fmt.Errorf("build: %w", err)
 	}
 
-	cmd = exec.CommandContext(ctx, c.GoPath, "build", "-o", "main", "-trimpath", "-gcflags", "-m=2", goFilename)
+	args := []string{"build", "-o", "main", "-trimpath", "-gcflags"}
+	var gcflags []string
+	if config.Options.DisableInlining {
+		gcflags = append(gcflags, "-l")
+	}
+	if config.Options.DisableOptimizations {
+		gcflags = append(gcflags, "-N")
+	}
+	gcflags = append(gcflags, "-m=2")
+	args = append(args, strings.Join(gcflags, " "))
+	args = append(args, goFilename)
+	fmt.Printf("%v\n", args)
+	cmd = exec.CommandContext(ctx, c.GoPath, args...)
 	cmd.Dir = buildDir
 	cmd.Env = buildEnv
 	output, err = cmd.CombinedOutput()

@@ -39,6 +39,10 @@ function selectCompiler(index: number) {
   settings.compiler = compilerNames.value[index]
   emit('update:settings', settings)
 }
+
+function updateOptions() {
+  emit('update:settings', settings)
+}
 </script>
 
 <template>
@@ -51,6 +55,16 @@ function selectCompiler(index: number) {
         @update:modelValue="selectCompiler"
         :options="compilerNames"
       ></DropDown>
+    </div>
+
+    <div class="labeled-item">
+      <label>Options:</label>
+      <input
+        type="text"
+        v-model="settings.options"
+        @input="updateOptions"
+        style="height: 1.5rem; width: 20rem"
+      />
     </div>
 
     <div class="spacer"></div>

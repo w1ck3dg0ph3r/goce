@@ -73,7 +73,11 @@ async function compileCode() {
   state.status = Status.Compiling
   state.buildOutput = ''
   try {
-    let compiled = await API.compileCode(props.code, props.settings.compiler)
+    let compiled = await API.compileCode(
+      props.code,
+      props.settings.compiler,
+      props.settings.options,
+    )
     state.buildOutput = compiled.buildOutput
     state.sourceMap.update(compiled)
     state.status = compiled.buildFailed ? Status.Error : Status.Idle

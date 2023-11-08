@@ -24,6 +24,7 @@ export class SourceTab extends Tab {
 
 export interface SourceSettings {
   compiler: string
+  options: string
 }
 
 export class DiffTab extends Tab {

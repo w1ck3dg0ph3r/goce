@@ -32,7 +32,11 @@ export class API {
     return await res.json()
   }
 
-  async compileCode(code: string, compilerName?: string): Promise<CompilationResult> {
+  async compileCode(
+    code: string,
+    compilerName: string,
+    compilerOptions?: string,
+  ): Promise<CompilationResult> {
     const res = await fetch(`${this.baseUrl}/api/compile`, {
       method: 'POST',
       headers: {
@@ -40,6 +44,7 @@ export class API {
       },
       body: JSON.stringify({
         name: compilerName,
+        options: compilerOptions,
         code: code,
       }),
     })
