@@ -97,10 +97,12 @@ func (api *API) Compile(ctx *fiber.Ctx) error {
 
 	cacheKey := CompilationCacheKey{CompilerName: compInfo.Name(), Code: code}
 	var cacheValue CompilationCacheValue
-	if found, err := api.CompilationCache.Get(cacheKey, &cacheValue); found {
-		return ctx.JSON(Response(cacheValue))
-	} else if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	if api.CompilationCache != nil {
+		if found, err := api.CompilationCache.Get(cacheKey, &cacheValue); found {
+			return ctx.JSON(Response(cacheValue))
+		} else if err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		}
 	}
 
 	compConfig := compilers.CompilerConfig{
@@ -111,8 +113,10 @@ func (api *API) Compile(ctx *fiber.Ctx) error {
 	cacheValue.BuildOutput = string(compRes.BuildOutput)
 	if err != nil {
 		cacheValue.BuildFailed = true
-		if err := api.CompilationCache.Set(cacheKey, cacheValue, api.Config.CompilationCacheTTL); err != nil {
-			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		if api.CompilationCache != nil {
+			if err := api.CompilationCache.Set(cacheKey, cacheValue, api.Config.CompilationCacheTTL); err != nil {
+				return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+			}
 		}
 		return ctx.JSON(Response{
 			BuildFailed: true,
@@ -127,8 +131,10 @@ func (api *API) Compile(ctx *fiber.Ctx) error {
 	parseRes := parser.Parse(compRes)
 	cacheValue.Result = parseRes
 
-	if err := api.CompilationCache.Set(cacheKey, cacheValue, api.Config.CompilationCacheTTL); err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+	if api.CompilationCache != nil {
+		if err := api.CompilationCache.Set(cacheKey, cacheValue, api.Config.CompilationCacheTTL); err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, err.Error())
+		}
 	}
 
 	return ctx.JSON(Response{

@@ -29,19 +29,24 @@ type Config struct {
 		// Add supported cross-compilation architectures.
 		AdditionalArchitectures bool
 	}
+
+	Cache struct {
+		Enabled bool
+	}
 }
 
 // ReadConfig reads configuration options from available sources.
 func ReadConfig() (*Config, error) {
 	_ = godotenv.Load()
 
-	viper.BindEnv("Listen", "GOCE_LISTEN")
-	viper.BindEnv("CompilationCacheTTL", "GOCE_COMPILATION_CACHE_TTL")
-	viper.BindEnv("SharedCodeTTL", "GOCE_SHARED_CODE_TTL")
-	viper.BindEnv("Compilers.SearchGoPath", "GOCE_COMPILERS_SEARCH_GO_PATH")
-	viper.BindEnv("Compilers.SearchSDKPath", "GOCE_COMPILERS_SEARCH_SDK_PATH")
-	viper.BindEnv("Compilers.LocalCompilers", "GOCE_COMPILERS_LOCAL_COMPILERS")
-	viper.BindEnv("Compilers.AdditionalArchitectures", "GOCE_COMPILERS_ADDITIONAL_ARCHITECTURES")
+	_ = viper.BindEnv("Listen", "GOCE_LISTEN")
+	_ = viper.BindEnv("CompilationCacheTTL", "GOCE_COMPILATION_CACHE_TTL")
+	_ = viper.BindEnv("SharedCodeTTL", "GOCE_SHARED_CODE_TTL")
+	_ = viper.BindEnv("Compilers.SearchGoPath", "GOCE_COMPILERS_SEARCH_GO_PATH")
+	_ = viper.BindEnv("Compilers.SearchSDKPath", "GOCE_COMPILERS_SEARCH_SDK_PATH")
+	_ = viper.BindEnv("Compilers.LocalCompilers", "GOCE_COMPILERS_LOCAL_COMPILERS")
+	_ = viper.BindEnv("Compilers.AdditionalArchitectures", "GOCE_COMPILERS_ADDITIONAL_ARCHITECTURES")
+	_ = viper.BindEnv("Cache.Enabled", "GOCE_CACHE_ENABLED")
 
 	viper.SetDefault("Listen", ":9000")
 	viper.SetDefault("CompilationCacheTTL", 2*time.Hour)
@@ -50,6 +55,7 @@ func ReadConfig() (*Config, error) {
 	viper.SetDefault("Compilers.SearchSDKPath", false)
 	viper.SetDefault("Compilers.LocalCompilers", []string{})
 	viper.SetDefault("Compilers.AdditionalArchitectures", true)
+	viper.SetDefault("Cache.Enabled", true)
 
 	viper.SetConfigName("goce")
 	viper.SetConfigType("toml")

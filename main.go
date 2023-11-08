@@ -16,6 +16,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 
+	"github.com/w1ck3dg0ph3r/goce/cache"
 	"github.com/w1ck3dg0ph3r/goce/compilers"
 )
 
@@ -55,10 +56,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	compilationCache, err := NewCompilationCache("cache.db")
-	if err != nil {
-		fmt.Printf("compilation cache: %v", err.Error())
-		os.Exit(1)
+	var compilationCache *cache.Cache[CompilationCacheKey, CompilationCacheValue]
+	if cfg.Cache.Enabled {
+		compilationCache, err = NewCompilationCache("cache.db")
+		if err != nil {
+			fmt.Printf("compilation cache: %v", err.Error())
+			os.Exit(1)
+		}
 	}
 
 	sharedCodeStore, err := NewSharedStore("shared.db")
@@ -92,7 +96,12 @@ func main() {
 		if err := app.Shutdown(); err != nil {
 			fmt.Printf("shutdown: %v\n", err)
 		}
-		compilationCache.Close()
+		if compilationCache != nil {
+			compilationCache.Close()
+		}
+		if sharedCodeStore != nil {
+			sharedCodeStore.Close()
+		}
 		doneCh <- struct{}{}
 	}()
 	if err := app.Listen(cfg.Listen); err != nil {
