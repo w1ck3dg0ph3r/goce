@@ -13,6 +13,7 @@ class State {
   }
 
   compilers: Array<CompilerInfo> = new Array()
+  compilerByName: Map<string, CompilerInfo> = new Map()
   defaultCompiler: string = ''
 
   errorMessages = ''

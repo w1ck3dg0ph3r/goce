@@ -38,7 +38,13 @@ const sourceTabsByName = computed(() => {
 function addSourceTab() {
   const tabId = Symbol('source-tab')
   const tab = new SourceTab(tabId, `source${nextSourceTabNumber}`, defaultCode, {
-    compiler: State.defaultCompiler,
+    compilerName: State.defaultCompiler,
+    compilerInfo: State.compilerByName.get(State.defaultCompiler)!,
+    compilerOptions: {
+      architectureLevel: '',
+      disableOptimizations: false,
+      disableInlining: false,
+    },
   })
   tabs.set(tabId, tab)
   nextSourceTabNumber++
@@ -84,8 +90,8 @@ async function loadSharedCode(): Promise<boolean> {
       case 'code':
         let id = Symbol('source-tab')
         let tab = new SourceTab(id, sharedTab.name, sharedTab.code, sharedTab.settings)
-        if (!isCompilerAvailable(tab.settings.compiler)) {
-          tab.settings.compiler = State.defaultCompiler
+        if (!isCompilerAvailable(tab.settings.compilerName)) {
+          tab.settings.compilerName = State.defaultCompiler
         }
         tabs.set(id, tab)
         break
@@ -105,7 +111,7 @@ async function loadSharedCode(): Promise<boolean> {
 }
 
 function isCompilerAvailable(compilerName: string): boolean {
-  return State.compilers.some((compiler) => compiler.name == compilerName)
+  return compilerName in State.compilers
 }
 
 bus.on('shareCode', async () => {
@@ -116,9 +122,7 @@ bus.on('shareCode', async () => {
         name: v.name,
         type: 'code',
         code: v.code,
-        settings: {
-          compiler: v.settings.compiler,
-        },
+        settings: v.settings,
       })
     } else if (v instanceof DiffTab) {
       shared.push({
@@ -148,6 +152,7 @@ function onTabRenamed(id: symbol, name: string) {
 async function getAvailableCompilers() {
   try {
     State.compilers = await API.listCompilers()
+    for (let c of State.compilers) State.compilerByName.set(c.name, c)
     if (State.compilers.length > 0) State.defaultCompiler = State.compilers[0].name
   } catch (e) {
     State.appendError('cannot get compilers')

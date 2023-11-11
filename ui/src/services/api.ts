@@ -1,3 +1,5 @@
+import type { SourceSettings } from "@/tab"
+
 export class API {
   readonly baseUrl: string = import.meta.env.VITE_APP_API_BASE_URL
 
@@ -32,7 +34,11 @@ export class API {
     return await res.json()
   }
 
-  async compileCode(code: string, compilerName?: string): Promise<CompilationResult> {
+  async compileCode(
+    code: string,
+    compilerName: string,
+    compilerOptions?: CompilerOptions
+  ): Promise<CompilationResult> {
     const res = await fetch(`${this.baseUrl}/api/compile`, {
       method: 'POST',
       headers: {
@@ -40,6 +46,7 @@ export class API {
       },
       body: JSON.stringify({
         name: compilerName,
+        options: compilerOptions,
         code: code,
       }),
     })
@@ -74,6 +81,13 @@ export interface CompilerInfo {
   name: string
   version: string
   platform: string
+  architecture: string
+}
+
+export interface CompilerOptions {
+  disableInlining: boolean
+  disableOptimizations: boolean
+  architectureLevel: string
 }
 
 export interface FormattedCode {
@@ -116,9 +130,7 @@ interface FileLocation {
 export interface SharedCodeTab {
   type: 'code'
   code: string
-  settings: {
-    compiler: string
-  }
+  settings: SourceSettings
 }
 
 export interface SharedDiffTab {

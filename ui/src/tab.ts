@@ -1,4 +1,5 @@
 import { SourceMap } from '@/components/editor/sourcemap'
+import type { CompilerInfo, CompilerOptions } from '@/services/api'
 
 export class Tab {
   id: symbol
@@ -23,7 +24,9 @@ export class SourceTab extends Tab {
 }
 
 export interface SourceSettings {
-  compiler: string
+  compilerName: string
+  compilerInfo: CompilerInfo
+  compilerOptions: CompilerOptions
 }
 
 export class DiffTab extends Tab {

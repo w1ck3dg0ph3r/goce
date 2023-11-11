@@ -13,7 +13,7 @@ import API from '@/services/api'
 import State from '@/state'
 import type { SourceMap } from '@/components/editor/sourcemap'
 
-import { onMounted, reactive, ref, watch } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { debounce } from 'lodash'
 
 const props = defineProps<{
@@ -50,7 +50,7 @@ async function formatCode() {
 
   state.status = Status.Formatting
   try {
-    let res = await API.formatCode(props.code, props.settings.compiler)
+    let res = await API.formatCode(props.code, props.settings.compilerName)
     if (res.code !== '') {
       updateCode(res.code)
     }
@@ -73,7 +73,11 @@ async function compileCode() {
   state.status = Status.Compiling
   state.buildOutput = ''
   try {
-    let compiled = await API.compileCode(props.code, props.settings.compiler)
+    let compiled = await API.compileCode(
+      props.code,
+      props.settings.compilerName,
+      props.settings.compilerOptions
+    )
     state.buildOutput = compiled.buildOutput
     state.sourceMap.update(compiled)
     state.status = compiled.buildFailed ? Status.Error : Status.Idle
@@ -109,24 +113,17 @@ function updateCode(code: string) {
   debouncedCompileCode()
 }
 
-onMounted(() => {
-  if (props.settings.compiler != '' && props.code != '') {
-    compileCode()
-  }
-  watch(
-    () => props.settings.compiler,
-    () => {
-      compileCode()
-    }
-  )
-})
+function applySettings() {
+  emit('update:settings', state.settings)
+  compileCode()
+}
 </script>
 
 <template>
   <div class="source-view">
     <SourcePanel
       v-model:settings="state.settings"
-      @update:settings="emit('update:settings', state.settings)"
+      @update:settings="applySettings"
       @diff="emit('diff')"
       @format="formatCode"
       @compile="compileCode"

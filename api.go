@@ -68,8 +68,9 @@ func (api *API) Format(ctx *fiber.Ctx) error {
 
 func (api *API) Compile(ctx *fiber.Ctx) error {
 	type Request struct {
-		Name string `json:"name"`
-		Code string `json:"code"`
+		Name    string                    `json:"name"`
+		Options compilers.CompilerOptions `json:"options"`
+		Code    string                    `json:"code"`
 	}
 	type Response struct {
 		BuildFailed bool   `json:"buildFailed"`
@@ -95,7 +96,11 @@ func (api *API) Compile(ctx *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, fmt.Sprintf("compiler not found: %s", req.Name))
 	}
 
-	cacheKey := CompilationCacheKey{CompilerName: compInfo.Name(), Code: code}
+	cacheKey := CompilationCacheKey{
+		CompilerName:    compInfo.Name(),
+		CompilerOptions: req.Options,
+		Code:            code,
+	}
 	var cacheValue CompilationCacheValue
 	if api.CompilationCache != nil {
 		if found, err := api.CompilationCache.Get(cacheKey, &cacheValue); found {
@@ -108,6 +113,7 @@ func (api *API) Compile(ctx *fiber.Ctx) error {
 	compConfig := compilers.CompilerConfig{
 		Platform:     compInfo.Platform,
 		Architecture: compInfo.Architecture,
+		Options:      req.Options,
 	}
 	compRes, err := compiler.Compile(ctx.Context(), compConfig, code)
 	cacheValue.BuildOutput = string(compRes.BuildOutput)
