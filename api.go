@@ -96,7 +96,11 @@ func (api *API) Compile(ctx *fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotFound, fmt.Sprintf("compiler not found: %s", req.Name))
 	}
 
-	cacheKey := CompilationCacheKey{CompilerName: compInfo.Name(), Code: code}
+	cacheKey := CompilationCacheKey{
+		CompilerName:    compInfo.Name(),
+		CompilerOptions: req.Options,
+		Code:            code,
+	}
 	var cacheValue CompilationCacheValue
 	if api.CompilationCache != nil {
 		if found, err := api.CompilationCache.Get(cacheKey, &cacheValue); found {

@@ -64,16 +64,16 @@ type CompilerConfig struct {
 type CompilerOptions struct {
 	DisableInlining      bool   `json:"disableInlining"`
 	DisableOptimizations bool   `json:"disableOptimizations"`
-	Architecture         string `json:"architecture"`
+	ArchitectureLevel    string `json:"architectureLevel"`
 }
 
 type Result struct {
-	CompilerInfo   CompilerInfo
-	SourceFilename string
-	SourceCode     []byte
+	CompilerInfo   CompilerInfo `json:"compilerInfo"`
+	SourceFilename string       `json:"sourceFilename"`
+	SourceCode     []byte       `json:"sourceCode"`
 
-	BuildOutput   []byte
-	ObjdumpOutput []byte
+	BuildOutput   []byte `json:"buildOutput"`
+	ObjdumpOutput []byte `json:"objdumpOutput"`
 }
 
 // List returns available compilers.
