@@ -13,7 +13,7 @@ import API from '@/services/api'
 import State from '@/state'
 import type { SourceMap } from '@/components/editor/sourcemap'
 
-import { onMounted, reactive, ref } from 'vue'
+import { reactive, ref } from 'vue'
 import { debounce } from 'lodash'
 
 const props = defineProps<{
@@ -50,7 +50,7 @@ async function formatCode() {
 
   state.status = Status.Formatting
   try {
-    let res = await API.formatCode(props.code, props.settings.compilerName)
+    let res = await API.formatCode(props.code, props.settings.compiler.name)
     if (res.code !== '') {
       updateCode(res.code)
     }
@@ -75,7 +75,7 @@ async function compileCode() {
   try {
     let compiled = await API.compileCode(
       props.code,
-      props.settings.compilerName,
+      props.settings.compiler.name,
       props.settings.compilerOptions
     )
     state.buildOutput = compiled.buildOutput

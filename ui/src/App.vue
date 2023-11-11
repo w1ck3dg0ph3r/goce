@@ -38,8 +38,7 @@ const sourceTabsByName = computed(() => {
 function addSourceTab() {
   const tabId = Symbol('source-tab')
   const tab = new SourceTab(tabId, `source${nextSourceTabNumber}`, defaultCode, {
-    compilerName: State.defaultCompiler,
-    compilerInfo: State.compilerByName.get(State.defaultCompiler)!,
+    compiler: State.compilers[State.defaultCompiler],
     compilerOptions: {
       architectureLevel: '',
       disableOptimizations: false,
@@ -90,8 +89,13 @@ async function loadSharedCode(): Promise<boolean> {
       case 'code':
         let id = Symbol('source-tab')
         let tab = new SourceTab(id, sharedTab.name, sharedTab.code, sharedTab.settings)
-        if (!isCompilerAvailable(tab.settings.compilerName)) {
-          tab.settings.compilerName = State.defaultCompiler
+        if (!isCompilerAvailable(tab.settings.compiler.name)) {
+          tab.settings.compiler = State.compilers[State.defaultCompiler]
+          tab.settings.compilerOptions = {
+            architectureLevel: '',
+            disableInlining: false,
+            disableOptimizations: false,
+          }
         }
         tabs.set(id, tab)
         break
@@ -111,7 +115,7 @@ async function loadSharedCode(): Promise<boolean> {
 }
 
 function isCompilerAvailable(compilerName: string): boolean {
-  return compilerName in State.compilers
+  return State.compilerByName.has(compilerName)
 }
 
 bus.on('shareCode', async () => {
@@ -153,7 +157,7 @@ async function getAvailableCompilers() {
   try {
     State.compilers = await API.listCompilers()
     for (let c of State.compilers) State.compilerByName.set(c.name, c)
-    if (State.compilers.length > 0) State.defaultCompiler = State.compilers[0].name
+    if (State.compilers.length > 0) State.defaultCompiler = 0
   } catch (e) {
     State.appendError('cannot get compilers')
   }

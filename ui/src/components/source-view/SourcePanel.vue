@@ -31,7 +31,7 @@ const emit = defineEmits<{
 
 onMounted(() => {
   for (let [i, c] of State.compilers.entries()) {
-    if (c.name == settings.compilerName) {
+    if (c.name == settings.compiler.name) {
       selectedCompilerIndex.value = i
       break
     }
@@ -40,10 +40,7 @@ onMounted(() => {
   if (settings.compilerOptions.architectureLevel) {
     selectedArchitectureLevel.value = availableLevels.value.values.indexOf(settings.compilerOptions.architectureLevel)
   }
-  settings.compilerOptions.architectureLevel = availableLevels.value.values[selectedArchitectureLevel.value]
-  settings.compilerOptions.disableOptimizations = !optimizations.value
-  settings.compilerOptions.disableInlining = !inlining.value
-  emit('update:settings', settings)
+  updateSettings()
 })
 
 interface ArchitectureLevels {
@@ -95,13 +92,12 @@ function selectArchitectureLevel(index: number) {
   updateSettings()
 }
 
-function updateOptions() {
+function updateCompilerOptions() {
   updateSettings()
 }
 
 function updateSettings() {
-  settings.compilerName = compilerNames.value[selectedCompilerIndex.value]
-  settings.compilerInfo = State.compilers[selectedCompilerIndex.value]
+  settings.compiler = State.compilers[selectedCompilerIndex.value]
   settings.compilerOptions.architectureLevel = availableLevels.value.values[selectedArchitectureLevel.value]
   settings.compilerOptions.disableOptimizations = !optimizations.value
   settings.compilerOptions.disableInlining = !inlining.value
@@ -133,13 +129,13 @@ function updateSettings() {
     </div>
 
     <div class="item">
-      <GoceCheckbox class="control" v-model="optimizations" @update:modelValue="updateOptions"
+      <GoceCheckbox class="control" v-model="optimizations" @update:modelValue="updateCompilerOptions"
         >Optimizations</GoceCheckbox
       >
     </div>
 
     <div class="item">
-      <GoceCheckbox class="control" v-model="inlining" @update:modelValue="updateOptions"
+      <GoceCheckbox class="control" v-model="inlining" @update:modelValue="updateCompilerOptions"
         >Inlining</GoceCheckbox
       >
     </div>
