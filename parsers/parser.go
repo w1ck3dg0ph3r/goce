@@ -41,8 +41,9 @@ type InlinedCall struct {
 }
 
 type HeapEscape struct {
-	Name     string   `json:"name"`
+	Name     string   `json:"name,omitempty"`
 	Location Location `json:"location"`
+	Message  string   `json:"message,omitempty"`
 }
 
 type Location struct {

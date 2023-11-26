@@ -117,8 +117,9 @@ export interface CompilationResult {
     length: number
   }[]
   heapEscapes?: {
-    name: string
+    name?: string
     location: FileLocation
+    message?: string
   }[]
 }
 

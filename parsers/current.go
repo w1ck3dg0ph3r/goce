@@ -108,11 +108,15 @@ func parseBuildOutput(res *Result, sourceCode []byte, output io.Reader) {
 		// Heap escapes
 		if match = reEscapesToHeap.FindSubmatch(text); match != nil {
 			line := sourceLines[location.Line-1]
-			name := match[reInliningCall_Name]
-			if bytes.HasPrefix(line[location.Column-1:], name) {
+			name := match[reEscapesToHeap_Name]
+			if !bytes.HasSuffix(text, []byte(":")) {
 				he := HeapEscape{
-					Name:     string(match[reEscapesToHeap_Name]),
 					Location: locationToUnicode(sourceLines, location),
+				}
+				if bytes.HasPrefix(line[location.Column-1:], name) {
+					he.Name = string(match[reEscapesToHeap_Name])
+				} else {
+					he.Message = string(text)
 				}
 				res.HeapEscapes = append(res.HeapEscapes, he)
 			}
@@ -269,7 +273,7 @@ const (
 	reInliningCall_Name = iota + 1
 )
 
-var reEscapesToHeap = regexp.MustCompile(`^(\w+) escapes to heap:`)
+var reEscapesToHeap = regexp.MustCompile(`^([\w_&{}]+) escapes to heap$`)
 
 const (
 	reEscapesToHeap_Name = iota + 1

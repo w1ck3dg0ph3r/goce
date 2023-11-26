@@ -162,10 +162,18 @@ export class SourceMap {
     if (compiled.heapEscapes) {
       for (const he of compiled.heapEscapes) {
         const [line, column] = [he.location.l, he.location.c]
+        let message: string
+        let columnStart = column
+        let columnEnd = (he.name) ? column + he.name.length : column + 1
+        if (he.name) {
+          message = `\`${he.name}\` escapes to heap` 
+        } else {
+          message = he.message!
+        }
         decs.push({
-          range: new monaco.Range(line, column, line, column + he.name.length),
+          range: new monaco.Range(line, columnStart, line, columnEnd),
           options: {
-            hoverMessage: { value: `\`${he.name}\` escapes to heap` },
+            hoverMessage: { value: message },
             inlineClassName: 'inline-hover-escape',
           },
         })
