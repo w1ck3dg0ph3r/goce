@@ -57,7 +57,7 @@ func ReadConfig() (*Config, error) {
 	viper.SetDefault("Compilers.AdditionalArchitectures", true)
 	viper.SetDefault("Cache.Enabled", true)
 
-	viper.SetConfigName("goce")
+	viper.SetConfigName("goce.toml")
 	viper.SetConfigType("toml")
 	viper.AddConfigPath(".")
 	viper.AddConfigPath("/etc/goce")
