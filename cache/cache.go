@@ -18,11 +18,13 @@ type Key interface {
 type Cache[K Key, V any] struct {
 	db *bbolt.DB
 
+	cleanupInterval time.Duration
+
 	doneCh chan struct{}
 	wg     sync.WaitGroup
 }
 
-func New[K Key, V any](filename string) (*Cache[K, V], error) {
+func New[K Key, V any](filename string, opts ...Option[K, V]) (*Cache[K, V], error) {
 	db, err := bbolt.Open(filename, 0o660, &bbolt.Options{
 		NoFreelistSync: true,
 		FreelistType:   bbolt.FreelistMapType,
@@ -32,17 +34,30 @@ func New[K Key, V any](filename string) (*Cache[K, V], error) {
 	}
 
 	cache := &Cache[K, V]{
-		db:     db,
-		doneCh: make(chan struct{}),
+		db:              db,
+		cleanupInterval: 1 * time.Minute,
+		doneCh:          make(chan struct{}),
+	}
+
+	for _, opt := range opts {
+		opt(cache)
 	}
 
 	if err := cache.createBuckets(); err != nil {
 		return nil, fmt.Errorf("create buckets: %w", err)
 	}
 
-	cache.startCleanup(1 * time.Minute)
+	cache.startCleanup(cache.cleanupInterval)
 
 	return cache, nil
+}
+
+type Option[K Key, V any] func(*Cache[K, V])
+
+func WithCleanupInterval[K Key, V any](v time.Duration) Option[K, V] {
+	return func(cache *Cache[K, V]) {
+		cache.cleanupInterval = v
+	}
 }
 
 func (cache *Cache[K, V]) Get(k K, v *V) (bool, error) {
