@@ -8,3 +8,5 @@
 goce.toml
 .env
 .env.production
+
+coverage.out

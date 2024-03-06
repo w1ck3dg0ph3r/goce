@@ -18,6 +18,8 @@ func New() ID {
 	return id
 }
 
+var ErrInvalid = errors.New("invalid shortid")
+
 func Parse(s string) (ID, error) {
 	var id ID
 	b := decode(s)
@@ -31,11 +33,7 @@ func (id ID) String() string {
 	return encode(id[:])
 }
 
-var (
-	ErrInvalid = errors.New("invalid shortid")
-
-	counter = readRandomUint32()
-)
+var counter = readRandomUint32()
 
 func readRandomUint32() uint32 {
 	var b [4]byte
