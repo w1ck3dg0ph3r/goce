@@ -32,7 +32,7 @@ defineExpose({
 
 const $editor = ref<HTMLElement | null>(null)
 let editor: monaco.editor.IStandaloneCodeEditor
-let decorations: monaco.editor.IEditorDecorationsCollection
+let editorDecorations: monaco.editor.IEditorDecorationsCollection
 let highlightDecorations: monaco.editor.IEditorDecorationsCollection
 let hoveredLine = -1
 
@@ -55,7 +55,7 @@ onMounted(() => {
     watchEffect(() => {
       if (props.code != editor.getValue()) {
         editor.getModel()?.setValue(props.code ?? '')
-        decorations.set(props.decorations || [])
+        editorDecorations.set(props.decorations || [])
       }
     })
   )
@@ -71,7 +71,7 @@ onMounted(() => {
 
   unsubscribeHandlers.push(
     watchEffect(() => {
-      decorations.set(props.decorations || [])
+      editorDecorations.set(props.decorations || [])
     })
   )
 
@@ -129,7 +129,7 @@ function createEditor() {
   options = merge(options, props.options)
   editor = monaco.editor.create($editor.value!, options)
 
-  decorations = editor.createDecorationsCollection()
+  editorDecorations = editor.createDecorationsCollection()
   highlightDecorations = editor.createDecorationsCollection()
 
   editor.onMouseMove((ev) => {

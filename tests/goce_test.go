@@ -237,9 +237,8 @@ func buildGoce(t *testing.T) string {
 		t.Fatalf(err.Error())
 	}
 	pkg := filepath.Join(cwd, "..")
-
 	binary := filepath.Join(t.TempDir(), "goce")
-
+	fmt.Printf("building goce: %q\n", binary)
 	cmd := exec.Command("go", "build", "-o", binary, pkg)
 	cmd.Env = os.Environ()
 	cmd.Stderr = os.Stderr
@@ -261,6 +260,7 @@ func startGoce(t *testing.T, binary string) *exec.Cmd {
 	)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
+	fmt.Printf("starting goce: %q\n", binary)
 	if err := cmd.Start(); err != nil {
 		t.Fatalf(err.Error())
 	}
@@ -280,6 +280,9 @@ func stopGoce(t *testing.T, cmd *exec.Cmd) {
 
 func waitForAPI(t *testing.T, url string) {
 	t.Helper()
+	const timeout = 15 * time.Second
+	fmt.Printf("waiting for goce api: %q\n", url)
+	start := time.Now()
 	for {
 		time.Sleep(100 * time.Millisecond)
 		req, err := http.NewRequest("GET", url+"/ok", nil)
@@ -290,8 +293,11 @@ func waitForAPI(t *testing.T, url string) {
 		if err != nil {
 			continue
 		}
-		if res.StatusCode == http.StatusOK {
+		if res.StatusCode == http.StatusOK || res.StatusCode == http.StatusNotFound {
 			break
+		}
+		if time.Since(start) > timeout {
+			t.Fatal("timed out waiting for api")
 		}
 	}
 }

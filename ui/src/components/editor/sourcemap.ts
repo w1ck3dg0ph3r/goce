@@ -163,8 +163,8 @@ export class SourceMap {
       for (const he of compiled.heapEscapes) {
         const [line, column] = [he.location.l, he.location.c]
         let message: string
-        let columnStart = column
-        let columnEnd = (he.name) ? column + he.name.length : column + 1
+        const columnStart = column
+        const columnEnd = (he.name) ? column + he.name.length : column + 1
         if (he.name) {
           message = `\`${he.name}\` escapes to heap` 
         } else {
