@@ -86,7 +86,7 @@ async function loadSharedCode(): Promise<boolean> {
 
   for (let sharedTab of shared) {
     switch (sharedTab.type) {
-      case 'code':
+      case 'code': {
         let id = Symbol('source-tab')
         let tab = new SourceTab(id, sharedTab.name, sharedTab.code, sharedTab.settings)
         if (!isCompilerAvailable(tab.settings.compiler.name)) {
@@ -99,6 +99,7 @@ async function loadSharedCode(): Promise<boolean> {
         }
         tabs.set(id, tab)
         break
+      }
       case 'diff':
         diffTabs.push(sharedTab)
         break

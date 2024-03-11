@@ -1,0 +1,61 @@
+name: test
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test-api:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - name: setup-go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.22"
+
+      - name: test
+        run: >
+          mkdir -p ui/dist
+          && echo -e "User-agent: *\nDisallow: /api" > ui/dist/robots.txt
+          && go test -v -count=1 -race ./...
+
+      - name: lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: v1.54
+
+  test-ui:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./ui
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - name: setup-pnpm
+        uses: pnpm/action-setup@0609f0983b7a228f052f81ef4c3d6510cae254ad
+        with:
+          version: 8.15.4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18.14'
+          cache: 'pnpm'
+          cache-dependency-path: ui/pnpm-lock.yaml
+
+      - name: install
+        run: pnpm install
+
+      - name: test
+        run: pnpm type-check
+
+      - name: lint
+        run: pnpm lint
