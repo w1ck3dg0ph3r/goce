@@ -1,4 +1,4 @@
-import type { SourceSettings } from "@/tab"
+import type { SourceSettings } from '@/tab'
 
 export class API {
   readonly baseUrl: string = import.meta.env.VITE_APP_API_BASE_URL
@@ -136,8 +136,8 @@ export interface SharedCodeTab {
 
 export interface SharedDiffTab {
   type: 'diff'
-  originalSourceName: string
-  modifiedSourceName: string
+  originalSource: number
+  modifiedSource: number
   inline: boolean
 }
 
@@ -145,7 +145,10 @@ export type SharedTab = {
   name: string
 } & (SharedCodeTab | SharedDiffTab)
 
-export type SharedCode = Array<SharedTab>
+export type SharedCode = {
+  tabs: Array<SharedTab>
+  activeTab: number
+}
 
 const api = new API()
 export default api

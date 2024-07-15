@@ -1,45 +1,36 @@
 <script setup lang="ts">
-import {
-  computed,
-  inject,
-  onMounted,
-  onUnmounted,
-  ref,
-  type Ref,
-  getCurrentInstance,
-  onUpdated,
-} from 'vue'
-import { TabsInjectionKey, type TabData } from './GoceTabs.vue'
+import { computed, inject, onMounted, onUnmounted } from 'vue'
+import { TabsInjectionKey } from './GoceTabs.vue'
+import { watch } from 'vue'
 
 const props = defineProps<{
-  id?: string
+  tabId: symbol
   title: string
+  order: number
 }>()
 
 const tabsInjection = inject(TabsInjectionKey)
 if (!tabsInjection) throw new Error('tab not inside tabs')
 
-let tabData: Ref<TabData | null> = ref(null)
-
 onMounted(() => {
-  tabData.value = {
-    id: getCurrentInstance()?.vnode.key as symbol,
+  tabsInjection.addTab({
+    id: props.tabId,
     title: props.title,
-  }
-  tabsInjection.addTab(tabData.value)
-})
-
-onUpdated(() => {
-  if (tabData.value) {
-    tabData.value.title = props.title
-  }
+    order: props.order,
+  })
+  watch(
+    () => props.order,
+    (newOrder) => {
+      tabsInjection.setTabOrder(props.tabId, newOrder)
+    }
+  )
 })
 
 onUnmounted(() => {
-  if (tabData.value?.id) tabsInjection.removeTab(tabData.value.id)
+  tabsInjection.removeTab(props.tabId)
 })
 
-const isActive = computed(() => tabsInjection.activeTab.value == tabData.value?.id)
+const isActive = computed(() => tabsInjection.activeTabId.value == props.tabId)
 </script>
 
 <template>
