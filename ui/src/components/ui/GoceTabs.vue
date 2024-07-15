@@ -1,21 +1,23 @@
 <script lang="ts">
+import { computed } from 'vue'
 import { type InjectionKey, type Ref, provide, ref, readonly, reactive, nextTick } from 'vue'
 
 export interface TabData {
   id: symbol
   title: string
+  order: number
 }
 
 export const TabsInjectionKey = Symbol('tabs') as InjectionKey<{
   addTab(tabData: TabData): void
-  removeTab(tabId: symbol): void
-  activeTab: Readonly<Ref<symbol | null>>
+  removeTab(id: symbol): void
+  setTabOrder(id: symbol, order: number): void
+  activeTabId: Readonly<Ref<symbol | null>>
 }>
 </script>
 
 <script setup lang="ts">
-const tabsOrder = reactive(new Array<symbol>())
-const tabs = reactive(new Map<symbol, TabData>())
+const tabs = reactive(new Map<Symbol, TabData>())
 let activeTabId: Ref<symbol | null> = ref(null)
 
 let $tabHeader: Ref<HTMLElement | null> = ref(null)
@@ -38,27 +40,45 @@ const emit = defineEmits<{
   (e: 'newTabClicked'): void
   (e: 'closeTabClicked', id: symbol): void
   (e: 'tabRenamed', id: symbol, name: string): void
+  (e: 'tabsSwapped', a: number, b: number): void
 }>()
+
+defineExpose({
+  selectTab,
+})
 
 provide(TabsInjectionKey, {
   addTab,
   removeTab,
-  activeTab: readonly(activeTabId),
+  setTabOrder,
+  activeTabId: readonly(activeTabId),
 })
 
-function addTab(tabData: TabData) {
-  tabs.set(tabData.id, tabData)
-  tabsOrder.push(tabData.id)
-  activeTabId.value = tabData.id
+const tabList = computed(() => {
+  let entries = Array.from(tabs.values())
+  entries.sort((a, b) => a.order - b.order)
+  return entries
+})
+
+function addTab(tab: TabData) {
+  tabs.set(tab.id, tab)
+  activeTabId.value = tab.id
 }
 
-function removeTab(tabId: symbol) {
-  const index = tabsOrder.indexOf(tabId)
-  if (tabId == activeTabId.value) {
-    chooseNextActiveTab(index)
+function removeTab(id: symbol) {
+  const tab = tabs.get(id)
+  if (!tab) return
+  if (id == activeTabId.value) {
+    chooseNextActiveTab(tab.order)
   }
-  tabsOrder.splice(index, 1)
-  tabs.delete(tabId)
+  tabs.delete(id)
+}
+
+function setTabOrder(id: symbol, order: number) {
+  const tab = tabs.get(id)
+  if (tab) {
+    tab.order = order
+  }
 }
 
 function selectTab(id: symbol) {
@@ -67,10 +87,10 @@ function selectTab(id: symbol) {
 }
 
 function chooseNextActiveTab(current: number) {
-  if (current < tabsOrder.length - 1) {
-    activeTabId.value = tabsOrder[current + 1]
+  if (current < tabList.value.length - 1) {
+    activeTabId.value = tabList.value[current + 1].id
   } else if (current > 0) {
-    activeTabId.value = tabsOrder[current - 1]
+    activeTabId.value = tabList.value[current - 1].id
   } else {
     activeTabId.value = null
   }
@@ -99,16 +119,17 @@ function startDragging(id: symbol, ev: MouseEvent) {
   if (renameTabId.value) return
 
   selectTab(id)
-  if (tabsOrder.length == 1) return
+  if (tabs.size == 1) return
 
   let tabButtons = $tabHeader.value?.children
   if (!tabButtons) return
 
-  let index = tabsOrder.indexOf(id)
+  const tab = tabs.get(id)
+  if (!tab) return
   isDraggingStarted.value = true
-  dragState.index = index
-  dragState.id = id
-  dragState.left = (tabButtons[index] as HTMLElement).offsetLeft
+  dragState.index = tab.order
+  dragState.id = tab.id
+  dragState.left = (tabButtons[tab.order] as HTMLElement).offsetLeft
   dragState.start = ev.clientX
   document.addEventListener('mousemove', handleDragging)
   document.addEventListener('mouseup', stopDragging)
@@ -116,7 +137,7 @@ function startDragging(id: symbol, ev: MouseEvent) {
 }
 
 function swapTabs(i: number, j: number) {
-  ;[tabsOrder[i], tabsOrder[j]] = [tabsOrder[j], tabsOrder[i]]
+  emit('tabsSwapped', i, j)
 }
 
 function handleDragging(ev: MouseEvent) {
@@ -141,7 +162,7 @@ function handleDragging(ev: MouseEvent) {
       dragState.index = dragState.index - 1
     }
   }
-  if (dragState.index < tabsOrder.length - 1) {
+  if (dragState.index < tabs.size - 1) {
     let next = tabButtons[dragState.index + 1] as HTMLElement
     let middle = next.offsetLeft + next.clientWidth * 0.75
     if (right > middle) {
@@ -167,14 +188,16 @@ function stopDragging() {
 let $renameInput: Ref<HTMLInputElement[]> = ref([])
 let renameTabId: Ref<symbol | null> = ref(null)
 
-function isRenaming(tabId: symbol) {
-  return props.renameable && tabId == renameTabId.value
+function isRenaming(id: symbol) {
+  return props.renameable && id == renameTabId.value
 }
 
 function getTabContentWidth(id: symbol) {
   let tabButtons = $tabHeader.value?.children
   if (!tabButtons) return
-  let tabButton = tabButtons[tabsOrder.indexOf(id)] as HTMLElement
+  const tab = tabs.get(id)
+  if (!tab) return
+  let tabButton = tabButtons[tab.order] as HTMLElement
   let width = tabButton.getBoundingClientRect().width
   let style = getComputedStyle(tabButton)
   let padding = parseFloat(style.getPropertyValue('padding-left'))
@@ -196,8 +219,9 @@ function startRenaming(id: symbol) {
 
 function finishRenaming() {
   if (!renameTabId.value) return
-  let newName = $renameInput.value[0].value || ''
-  emit('tabRenamed', renameTabId.value, newName)
+  let newTitle = $renameInput.value[0].value || ''
+  emit('tabRenamed', renameTabId.value, newTitle)
+  tabs.get(renameTabId.value)!.title = newTitle
   renameTabId.value = null
 }
 
@@ -210,22 +234,22 @@ function cancelRenaming() {
   <div class="tabs-container">
     <div ref="$tabHeader" class="tabs-header">
       <button
-        v-for="id of tabsOrder"
-        :key="id"
+        v-for="tab of tabList"
+        :key="tab.id"
         class="tab-button"
         :class="{
-          active: id == activeTabId,
-          placeholder: isDragging && id == dragState.id,
-          renaming: isRenaming(id),
+          active: tab.id == activeTabId,
+          placeholder: isDragging && tab.id == dragState.id,
+          renaming: isRenaming(tab.id),
         }"
-        @mousedown="startDragging(id, $event)"
-        @dblclick="startRenaming(id)"
+        @mousedown="startDragging(tab.id, $event)"
+        @dblclick="startRenaming(tab.id)"
       >
-        <template v-if="isRenaming(id)">
+        <template v-if="isRenaming(tab.id)">
           <input
             ref="$renameInput"
             type="text"
-            :value="tabs.get(id)?.title"
+            :value="tab.title"
             @keydown.enter="finishRenaming"
             @keydown.escape="cancelRenaming"
             @blur="cancelRenaming"
@@ -234,8 +258,12 @@ function cancelRenaming() {
           />
         </template>
         <template v-else>
-          <span>{{ tabs.get(id)?.title }}</span>
-          <i v-if="props.closable" class="codicon codicon-close" @mousedown.stop="closeTab(id)"></i>
+          <span>{{ tab.title }}</span>
+          <i
+            v-if="props.closable"
+            class="codicon codicon-close"
+            @mousedown.stop="closeTab(tab.id)"
+          ></i>
         </template>
       </button>
 

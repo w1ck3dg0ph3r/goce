@@ -34,15 +34,15 @@ export class DiffTab extends Tab {
   constructor(id: symbol, name: string, settings?: DiffSettings) {
     super(id, name)
     this.settings = {
-      original: settings?.original || Symbol(),
-      modified: settings?.modified || Symbol(),
+      original: settings?.original,
+      modified: settings?.modified,
       inline: settings?.inline || false,
     }
   }
 }
 
 export interface DiffSettings {
-  original: symbol
-  modified: symbol
+  original?: symbol
+  modified?: symbol
   inline: boolean
 }

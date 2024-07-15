@@ -15,12 +15,22 @@ const emit = defineEmits<{
 function jumpToSource(line: number, column?: number) {
   emit('jumpToSource', line, column)
 }
+
+const tabIds = {
+  buildOutput: Symbol('tab'),
+}
 </script>
 
 <template>
   <div class="output-pane">
     <GoceTabs class="tabs">
-      <GoceTab title="Build Output" id="build-output" class="tab">
+      <GoceTab
+        title="Build Output"
+        :order="0"
+        id="build-output"
+        :tab-id="tabIds.buildOutput"
+        class="tab"
+      >
         <BuildOutput :value="props.buildOutput" @jumpToSource="jumpToSource"></BuildOutput>
       </GoceTab>
     </GoceTabs>
