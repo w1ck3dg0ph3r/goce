@@ -6,6 +6,7 @@ import { watch } from 'vue'
 const props = defineProps<{
   tabId: symbol
   title: string
+  icon?: string
   order: number
 }>()
 
@@ -16,6 +17,7 @@ onMounted(() => {
   tabsInjection.addTab({
     id: props.tabId,
     title: props.title,
+    icon: props.icon,
     order: props.order,
   })
   watch(

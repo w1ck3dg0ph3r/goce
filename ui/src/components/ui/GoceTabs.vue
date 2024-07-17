@@ -5,6 +5,7 @@ import { type InjectionKey, type Ref, provide, ref, readonly, reactive, nextTick
 export interface TabData {
   id: symbol
   title: string
+  icon?: string
   order: number
 }
 
@@ -115,6 +116,10 @@ const dragState = reactive<{
   start: 0,
 })
 
+const draggingTab = computed(() => {
+  return dragState.id ? tabs.get(dragState.id) : undefined
+})
+
 function startDragging(id: symbol, ev: MouseEvent) {
   if (renameTabId.value) return
 
@@ -197,11 +202,23 @@ function getTabContentWidth(id: symbol) {
   if (!tabButtons) return
   const tab = tabs.get(id)
   if (!tab) return
+
   let tabButton = tabButtons[tab.order] as HTMLElement
   let width = tabButton.getBoundingClientRect().width
   let style = getComputedStyle(tabButton)
   let padding = parseFloat(style.getPropertyValue('padding-left'))
-  return width - padding * 2
+  let flexGap = parseFloat(style.getPropertyValue('gap'))
+
+  let icon = tabButton.children.item(0)
+  let iconOffset = 0
+  console.dir(icon)
+  if (icon && icon?.tagName.toLowerCase() == 'i') {
+    iconOffset = icon.getBoundingClientRect().width
+    iconOffset += flexGap
+    console.log(`iconWidth: ${iconOffset}`)
+  }
+
+  return width - padding * 2 - iconOffset
 }
 
 function startRenaming(id: symbol) {
@@ -245,6 +262,7 @@ function cancelRenaming() {
         @mousedown="startDragging(tab.id, $event)"
         @dblclick="startRenaming(tab.id)"
       >
+        <i v-if="tab.icon" class="codicon" :class="`codicon-${tab.icon}`"></i>
         <template v-if="isRenaming(tab.id)">
           <input
             ref="$renameInput"
@@ -268,7 +286,8 @@ function cancelRenaming() {
       </button>
 
       <button ref="$draggingButton" v-show="isDragging" class="tab-button dragging">
-        <span>{{ tabs.get(dragState.id!)?.title }}</span>
+        <i v-if="draggingTab?.icon" class="codicon" :class="`codicon-${draggingTab?.icon}`"></i>
+        <span>{{ draggingTab?.title }}</span>
         <i v-if="props.closable" class="codicon codicon-close"></i>
       </button>
 
@@ -299,6 +318,7 @@ function cancelRenaming() {
 
     button.tab-button {
       display: flex;
+      align-items: center;
       gap: 0.2rem;
       border: none;
       border-bottom: none;

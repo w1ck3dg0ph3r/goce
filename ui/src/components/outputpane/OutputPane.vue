@@ -26,6 +26,7 @@ const tabIds = {
     <GoceTabs class="tabs">
       <GoceTab
         title="Build Output"
+        icon="server-process"
         :order="0"
         id="build-output"
         :tab-id="tabIds.buildOutput"

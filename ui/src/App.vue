@@ -229,6 +229,11 @@ func main() {
 	fmt.Println(square(res))
 }
 `
+
+function tabIcon(tab: Tab): string | undefined {
+  if (tab instanceof SourceTab) return 'file-code'
+  if (tab instanceof DiffTab) return 'diff'
+}
 </script>
 
 <template>
@@ -252,6 +257,7 @@ func main() {
         :key="tab.id"
         :tabId="tab.id"
         :title="tab.name"
+        :icon="tabIcon(tab)"
         :order="idx"
       >
         <SourceView
