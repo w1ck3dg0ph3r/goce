@@ -1,9 +1,10 @@
 package main
 
 import (
+	"os"
+	"path/filepath"
 	"time"
 
-	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 )
 
@@ -37,16 +38,14 @@ type Config struct {
 
 // ReadConfig reads configuration options from available sources.
 func ReadConfig() (*Config, error) {
-	_ = godotenv.Load()
-
-	_ = viper.BindEnv("Listen", "GOCE_LISTEN")
-	_ = viper.BindEnv("CompilationCacheTTL", "GOCE_COMPILATION_CACHE_TTL")
-	_ = viper.BindEnv("SharedCodeTTL", "GOCE_SHARED_CODE_TTL")
-	_ = viper.BindEnv("Compilers.SearchGoPath", "GOCE_COMPILERS_SEARCH_GO_PATH")
-	_ = viper.BindEnv("Compilers.SearchSDKPath", "GOCE_COMPILERS_SEARCH_SDK_PATH")
-	_ = viper.BindEnv("Compilers.LocalCompilers", "GOCE_COMPILERS_LOCAL_COMPILERS")
-	_ = viper.BindEnv("Compilers.AdditionalArchitectures", "GOCE_COMPILERS_ADDITIONAL_ARCHITECTURES")
-	_ = viper.BindEnv("Cache.Enabled", "GOCE_CACHE_ENABLED")
+	viper.MustBindEnv("Listen", "GOCE_LISTEN")
+	viper.MustBindEnv("CompilationCacheTTL", "GOCE_COMPILATION_CACHE_TTL")
+	viper.MustBindEnv("SharedCodeTTL", "GOCE_SHARED_CODE_TTL")
+	viper.MustBindEnv("Compilers.SearchGoPath", "GOCE_COMPILERS_SEARCH_GO_PATH")
+	viper.MustBindEnv("Compilers.SearchSDKPath", "GOCE_COMPILERS_SEARCH_SDK_PATH")
+	viper.MustBindEnv("Compilers.LocalCompilers", "GOCE_COMPILERS_LOCAL_COMPILERS")
+	viper.MustBindEnv("Compilers.AdditionalArchitectures", "GOCE_COMPILERS_ADDITIONAL_ARCHITECTURES")
+	viper.MustBindEnv("Cache.Enabled", "GOCE_CACHE_ENABLED")
 
 	viper.SetDefault("Listen", ":9000")
 	viper.SetDefault("CompilationCacheTTL", 2*time.Hour)
@@ -57,11 +56,14 @@ func ReadConfig() (*Config, error) {
 	viper.SetDefault("Compilers.AdditionalArchitectures", true)
 	viper.SetDefault("Cache.Enabled", true)
 
+	home, err := os.UserHomeDir()
+	if err != nil {
+		home = "$HOME"
+	}
 	viper.SetConfigName("goce.toml")
 	viper.SetConfigType("toml")
-	viper.AddConfigPath(".")
 	viper.AddConfigPath("/etc/goce")
-	viper.AddConfigPath("$HOME/.config/goce")
+	viper.AddConfigPath(filepath.Join(home, ".config/goce"))
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {

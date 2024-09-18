@@ -31,9 +31,8 @@ You will need [go](https://go.dev), [node](https://nodejs.org) and [pnpm](https:
 ## Configuration
 
 Goce can be configured via:
-- `goce.toml` file located in `$PWD`, `/etc/goce` or `$HOME/.config/goce`
+- `goce.toml` file located in `/etc/goce` or `~/.config/goce`
 - environment variables
-- `.env` file
 
 See [goce.example.toml](./goce.example.toml), [.env.example](./.env.example) and [config.go](./config.go) for details.
 

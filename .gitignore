@@ -4,8 +4,4 @@
 /goce
 /__debug_bin
 
-goce.toml
-.env
-.env.production
-
 coverage.out
