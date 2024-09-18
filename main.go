@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -56,16 +57,20 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err := os.Mkdir("data", os.ModeDir|os.ModePerm); err != nil && !errors.Is(err, os.ErrExist) {
+		fmt.Printf("can't create data directory: %v", err.Error())
+	}
+
 	var compilationCache *cache.Cache[CompilationCacheKey, CompilationCacheValue]
 	if cfg.Cache.Enabled {
-		compilationCache, err = NewCompilationCache("cache.db")
+		compilationCache, err = NewCompilationCache("data/cache.db")
 		if err != nil {
 			fmt.Printf("compilation cache: %v", err.Error())
 			os.Exit(1)
 		}
 	}
 
-	sharedCodeStore, err := NewSharedStore("shared.db")
+	sharedCodeStore, err := NewSharedStore("data/shared.db")
 	if err != nil {
 		fmt.Printf("shared code store: %v", err.Error())
 		os.Exit(1)

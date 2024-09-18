@@ -3,7 +3,6 @@
 
 /goce
 /__debug_bin
-/*.db
 
 goce.toml
 .env

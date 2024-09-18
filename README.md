@@ -44,5 +44,5 @@ See [goce.example.toml](./goce.example.toml), [.env.example](./.env.example) and
     - all versions insalled in `~/sdk/go*` (the default location for [multiple go installations](https://go.dev/doc/manage-install#installing-multiple) on *nix systems)
     - explicitly specified binary
 
-- goce stores compilation cache and shared code snippets in `cache.db` and `shared.db` respectively.
+- goce stores compilation cache and shared code snippets in `./data/cache.db` and `./data/shared.db` respectively.
     - the format can vary between versions, so you may have to remove these files.
