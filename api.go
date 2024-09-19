@@ -182,7 +182,7 @@ func (api *API) GetSharedCode(ctx *fiber.Ctx) error {
 }
 
 func (api *API) gofumptVersionForCompiler(name string) string {
-	const defaultVeriosn = "1.20"
+	const defaultVeriosn = "go1.23"
 
 	if name == "" {
 		return defaultVeriosn
@@ -199,5 +199,5 @@ func (api *API) gofumptVersionForCompiler(name string) string {
 	if err != nil {
 		return defaultVeriosn
 	}
-	return fmt.Sprintf("%d.%d", ver.Major(), ver.Minor())
+	return fmt.Sprintf("go%d.%d", ver.Major(), ver.Minor())
 }
