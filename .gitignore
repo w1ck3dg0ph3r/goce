@@ -1,7 +1,4 @@
-/ui/dist/
-/ui/node_modules/
-
+/.cache
 /goce
-/__debug_bin
 
 coverage.out

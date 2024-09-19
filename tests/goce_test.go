@@ -234,7 +234,7 @@ func buildGoce(t *testing.T) string {
 	t.Helper()
 	cwd, err := os.Getwd()
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 	pkg := filepath.Join(cwd, "..")
 	binary := filepath.Join(t.TempDir(), "goce")
@@ -262,7 +262,7 @@ func startGoce(t *testing.T, binary string) *exec.Cmd {
 	cmd.Stdout = os.Stdout
 	fmt.Printf("starting goce: %q\n", binary)
 	if err := cmd.Start(); err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 	waitForAPI(t, "http://localhost:9000")
 	return cmd
@@ -271,10 +271,10 @@ func startGoce(t *testing.T, binary string) *exec.Cmd {
 func stopGoce(t *testing.T, cmd *exec.Cmd) {
 	t.Helper()
 	if err := cmd.Process.Signal(os.Interrupt); err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 	if err := cmd.Wait(); err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 }
 

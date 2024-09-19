@@ -51,7 +51,7 @@ func ReadConfig() (*Config, error) {
 	viper.SetDefault("CompilationCacheTTL", 2*time.Hour)
 	viper.SetDefault("SharedCodeTTL", 24*time.Hour)
 	viper.SetDefault("Compilers.SearchGoPath", true)
-	viper.SetDefault("Compilers.SearchSDKPath", false)
+	viper.SetDefault("Compilers.SearchSDKPath", true)
 	viper.SetDefault("Compilers.LocalCompilers", []string{})
 	viper.SetDefault("Compilers.AdditionalArchitectures", true)
 	viper.SetDefault("Cache.Enabled", true)

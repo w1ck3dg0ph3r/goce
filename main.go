@@ -24,6 +24,8 @@ import (
 //go:embed ui/dist
 var distFS embed.FS
 
+var version string
+
 func main() {
 	cfg, err := ReadConfig()
 	if err != nil {
@@ -32,7 +34,7 @@ func main() {
 	}
 
 	app := fiber.New(fiber.Config{
-		AppName:       "GoCE v0.0.1",
+		AppName:       "GoCE " + version,
 		CaseSensitive: true,
 		StrictRouting: true,
 		ReadTimeout:   3 * time.Second,

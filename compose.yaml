@@ -1,0 +1,22 @@
+name: goce
+
+services:
+  goce:
+    image: w1ck3dg0ph3r/goce:latest
+    environment:
+      GOCE_LISTEN: :9000
+      GOCE_COMPILATION_CACHE_TTL: 2h
+      GOCE_SHARED_CODE_TTL: 24h
+      GOCE_COMPILERS_SEARCH_GO_PATH: false
+      GOCE_COMPILERS_SEARCH_SDK_PATH: true
+      GOCE_COMPILERS_ADDITIONAL_ARCHITECTURES: true
+      GOCE_CACHE_ENABLED: true
+    command: ["/opt/goce"]
+    volumes:
+      # Run `mkdir -p .cache/{goce,sdk,mod,build} && chown -R 1000:1000 .cache`
+      - .cache/goce:/opt/data
+      - .cache/sdk:/home/goce/sdk
+      - .cache/mod:/home/goce/go/pkg/mod
+      - .cache/build:/home/goce/.cache/go-build
+    ports:
+      - 9000:9000
