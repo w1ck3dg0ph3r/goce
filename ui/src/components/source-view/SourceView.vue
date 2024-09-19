@@ -47,6 +47,7 @@ const state = reactive({
 async function formatCode() {
   if (state.status == Status.Formatting) return
   if (!props.code) return
+  if (!props.settings.compiler) return
 
   state.status = Status.Formatting
   try {
@@ -69,6 +70,7 @@ async function formatCode() {
 async function compileCode() {
   if (state.status == Status.Compiling) return
   if (!props.code) return
+  if (!props.settings.compiler) return
 
   state.status = Status.Compiling
   state.buildOutput = ''

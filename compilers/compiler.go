@@ -10,6 +10,8 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/Masterminds/semver/v3"
 )
@@ -30,7 +32,7 @@ func New(cfg *Config) (*CompilersSvc, error) {
 	svc := &CompilersSvc{
 		cfg: cfg,
 	}
-	if err := svc.registerCompilers(); err != nil {
+	if err := svc.refreshAvailable(); err != nil {
 		return nil, err
 	}
 	return svc, nil
@@ -39,6 +41,12 @@ func New(cfg *Config) (*CompilersSvc, error) {
 type CompilersSvc struct {
 	cfg *Config
 
+	availableMu  sync.RWMutex
+	available    availableCompilers
+	availableTTL time.Time
+}
+
+type availableCompilers struct {
 	compilers       []*compilerDesc
 	compilerByName  map[string]*compilerDesc
 	defaultCompiler *compilerDesc
@@ -78,8 +86,11 @@ type Result struct {
 
 // List returns available compilers.
 func (svc *CompilersSvc) List() []CompilerInfo {
-	infos := make([]CompilerInfo, 0, len(svc.compilers))
-	for _, desc := range svc.compilers {
+	_ = svc.refreshAvailable()
+	svc.availableMu.RLock()
+	defer svc.availableMu.RUnlock()
+	infos := make([]CompilerInfo, 0, len(svc.available.compilers))
+	for _, desc := range svc.available.compilers {
 		infos = append(infos, desc.Info)
 	}
 	return infos
@@ -87,7 +98,10 @@ func (svc *CompilersSvc) List() []CompilerInfo {
 
 // Get returns compiler with a given name.
 func (svc *CompilersSvc) Get(name string) Compiler {
-	if comp, ok := svc.compilerByName[name]; ok {
+	_ = svc.refreshAvailable()
+	svc.availableMu.RLock()
+	defer svc.availableMu.RUnlock()
+	if comp, ok := svc.available.compilerByName[name]; ok {
 		return comp.Compiler
 	}
 	return nil
@@ -95,7 +109,13 @@ func (svc *CompilersSvc) Get(name string) Compiler {
 
 // Default returns default compiler.
 func (svc *CompilersSvc) Default() Compiler {
-	return svc.defaultCompiler.Compiler
+	_ = svc.refreshAvailable()
+	svc.availableMu.RLock()
+	defer svc.availableMu.RUnlock()
+	if svc.available.defaultCompiler == nil {
+		return nil
+	}
+	return svc.available.defaultCompiler.Compiler
 }
 
 type CompilerInfo struct {
@@ -131,49 +151,81 @@ type compilerDesc struct {
 	version *semver.Version
 }
 
-func (svc *CompilersSvc) registerCompilers() error {
-	svc.compilers = nil
-	svc.compilerByName = make(map[string]*compilerDesc)
+func (svc *CompilersSvc) refreshAvailable() error {
+	now := time.Now()
+	needRefresh := false
+	svc.availableMu.RLock()
+	if svc.availableTTL.Before(now) {
+		needRefresh = true
+	}
+	svc.availableMu.RUnlock()
 
-	if svc.cfg.SearchGoPath {
-		svc.registerGoFromPath()
-	}
-	if svc.cfg.SearchSDKPath {
-		svc.registerGoFromHomeSdk()
-	}
-	for _, path := range svc.cfg.LocalCompilers {
-		if err := svc.registerLocalCompiler(path); err != nil {
-			return err
-		}
+	if !needRefresh {
+		return nil
 	}
 
-	sort.Slice(svc.compilers, func(i, j int) bool {
-		if svc.compilers[i].version.Equal(svc.compilers[j].version) {
-			io := architectureOrder[svc.compilers[i].Info.Architecture]
-			jo := architectureOrder[svc.compilers[j].Info.Architecture]
-			return io < jo
-		}
-		return svc.compilers[i].version.GreaterThan(svc.compilers[j].version)
-	})
+	svc.availableMu.Lock()
+	defer svc.availableMu.Unlock()
 
-	if len(svc.compilers) == 0 {
-		return ErrNoCompilers
+	var err error
+	svc.available, err = svc.listAvailable()
+	if err != nil {
+		return err
 	}
-	svc.defaultCompiler = svc.compilers[0]
+	svc.availableTTL = time.Now().Add(15 * time.Second)
 	return nil
 }
 
-func (svc *CompilersSvc) registerGoFromPath() {
+func (svc *CompilersSvc) listAvailable() (availableCompilers, error) {
+	ac := availableCompilers{
+		compilerByName: map[string]*compilerDesc{},
+	}
+
+	if svc.cfg.SearchGoPath {
+		ac.searchGoPath()
+	}
+	if svc.cfg.SearchSDKPath {
+		ac.searchSDKPath()
+	}
+	for _, path := range svc.cfg.LocalCompilers {
+		if err := ac.addLocal(path); err != nil {
+			return availableCompilers{}, err
+		}
+	}
+
+	if svc.cfg.AdditionalArchitectures {
+		for _, cd := range ac.compilers {
+			ac.addArchitectures(cd)
+		}
+	}
+
+	sort.Slice(ac.compilers, func(i, j int) bool {
+		if ac.compilers[i].version.Equal(ac.compilers[j].version) {
+			io := architectureOrder[ac.compilers[i].Info.Architecture]
+			jo := architectureOrder[ac.compilers[j].Info.Architecture]
+			return io < jo
+		}
+		return ac.compilers[i].version.GreaterThan(ac.compilers[j].version)
+	})
+
+	if len(ac.compilers) > 0 {
+		ac.defaultCompiler = ac.compilers[0]
+	}
+
+	return ac, nil
+}
+
+func (ac *availableCompilers) searchGoPath() {
 	path, err := exec.LookPath("go")
 	if err != nil {
 		return
 	}
-	if err := svc.registerLocalCompiler(path); err != nil {
+	if err := ac.addLocal(path); err != nil {
 		return
 	}
 }
 
-func (svc *CompilersSvc) registerGoFromHomeSdk() {
+func (ac *availableCompilers) searchSDKPath() {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return
@@ -187,13 +239,13 @@ func (svc *CompilersSvc) registerGoFromHomeSdk() {
 		if !e.IsDir() || !strings.HasPrefix(e.Name(), "go") {
 			continue
 		}
-		if err := svc.registerLocalCompiler(filepath.Join(goSdkDir, e.Name(), "bin", "go")); err != nil {
+		if err := ac.addLocal(filepath.Join(goSdkDir, e.Name(), "bin", "go")); err != nil {
 			return
 		}
 	}
 }
 
-func (svc *CompilersSvc) registerLocalCompiler(path string) error {
+func (ac *availableCompilers) addLocal(path string) error {
 	fs, err := os.Stat(path)
 	if err != nil {
 		return fmt.Errorf("register compiler: %w", err)
@@ -216,18 +268,15 @@ func (svc *CompilersSvc) registerLocalCompiler(path string) error {
 	if err != nil {
 		return fmt.Errorf("register compiler: invalid version: %w", err)
 	}
-	if _, exists := svc.compilerByName[desc.Name]; exists {
+	if _, exists := ac.compilerByName[desc.Name]; exists {
 		return nil
 	}
-	svc.compilers = append(svc.compilers, desc)
-	svc.compilerByName[desc.Name] = desc
-	if svc.cfg.AdditionalArchitectures {
-		svc.addArchitectures(comp, desc)
-	}
+	ac.compilers = append(ac.compilers, desc)
+	ac.compilerByName[desc.Name] = desc
 	return nil
 }
 
-func (svc *CompilersSvc) addArchitectures(comp Compiler, desc *compilerDesc) {
+func (ac *availableCompilers) addArchitectures(desc *compilerDesc) {
 	var supportedArchs []string
 	if desc.Info.Platform == "linux" {
 		supportedArchs = append(supportedArchs, "amd64", "386", "arm64", "arm", "ppc64")
@@ -239,8 +288,8 @@ func (svc *CompilersSvc) addArchitectures(comp Compiler, desc *compilerDesc) {
 		newDesc := *desc
 		newDesc.Info.Architecture = arch
 		newDesc.Name = newDesc.Info.Name()
-		svc.compilers = append(svc.compilers, &newDesc)
-		svc.compilerByName[newDesc.Name] = &newDesc
+		ac.compilers = append(ac.compilers, &newDesc)
+		ac.compilerByName[newDesc.Name] = &newDesc
 	}
 }
 

@@ -14,7 +14,9 @@ class State {
 
   compilers: Array<CompilerInfo> = new Array()
   compilerByName: Map<string, CompilerInfo> = new Map()
-  defaultCompiler: number = 0
+  get defaultCompiler(): CompilerInfo | undefined {
+    return this.compilers.length ? this.compilers[0] : undefined
+  }
 
   errorMessages = ''
 
