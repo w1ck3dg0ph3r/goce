@@ -34,7 +34,7 @@ function addSourceTab() {
   const id = Symbol('tab')
   const name = `source${nextSourceTabNumber}`
   const tab = new SourceTab(id, name, defaultCode, {
-    compiler: State.compilers[State.defaultCompiler],
+    compiler: State.defaultCompiler,
     compilerOptions: {
       architectureLevel: '',
       disableOptimizations: false,
@@ -86,8 +86,8 @@ async function loadSharedCode(): Promise<boolean> {
       case 'code': {
         let id = Symbol('tab')
         let tab = new SourceTab(id, sharedTab.name, sharedTab.code, sharedTab.settings)
-        if (!isCompilerAvailable(tab.settings.compiler.name)) {
-          tab.settings.compiler = State.compilers[State.defaultCompiler]
+        if (!tab.settings.compiler || !isCompilerAvailable(tab.settings.compiler.name)) {
+          tab.settings.compiler = State.defaultCompiler
           tab.settings.compilerOptions = {
             architectureLevel: '',
             disableInlining: false,
@@ -170,7 +170,7 @@ bus.on('shareCode', async () => {
     }
   }
   let link = await API.shareCode(shared)
-  State.sharedCodeLink = `${API.baseUrl}/${link}`
+  State.sharedCodeLink = `${import.meta.env.VITE_APP_BASE_URL}/${link}`
 })
 
 function onCloseTab(id: symbol) {
@@ -194,7 +194,6 @@ async function getAvailableCompilers() {
   try {
     State.compilers = await API.listCompilers()
     for (let c of State.compilers) State.compilerByName.set(c.name, c)
-    if (State.compilers.length > 0) State.defaultCompiler = 0
   } catch (e) {
     State.appendError('cannot get compilers')
   }

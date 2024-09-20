@@ -211,11 +211,9 @@ function getTabContentWidth(id: symbol) {
 
   let icon = tabButton.children.item(0)
   let iconOffset = 0
-  console.dir(icon)
   if (icon && icon?.tagName.toLowerCase() == 'i') {
     iconOffset = icon.getBoundingClientRect().width
     iconOffset += flexGap
-    console.log(`iconWidth: ${iconOffset}`)
   }
 
   return width - padding * 2 - iconOffset

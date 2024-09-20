@@ -30,15 +30,20 @@ const emit = defineEmits<{
 }>()
 
 onMounted(() => {
+  if (!settings.compiler) {
+    return
+  }
   for (let [i, c] of State.compilers.entries()) {
-    if (c.name == settings.compiler.name) {
+    if (c.name == settings.compiler?.name) {
       selectedCompilerIndex.value = i
       break
     }
   }
   selectedArchitectureLevel.value = availableLevels.value.default
   if (settings.compilerOptions.architectureLevel) {
-    selectedArchitectureLevel.value = availableLevels.value.values.indexOf(settings.compilerOptions.architectureLevel)
+    selectedArchitectureLevel.value = availableLevels.value.values.indexOf(
+      settings.compilerOptions.architectureLevel
+    )
   }
   updateSettings()
 })
@@ -54,6 +59,9 @@ const availableLevels = computed(() => {
     names: [],
     values: [],
     default: 0,
+  }
+  if (!settings.compiler) {
+    return levels
   }
   let c = State.compilers[selectedCompilerIndex.value]
   switch (c.architecture) {
@@ -98,7 +106,8 @@ function updateCompilerOptions() {
 
 function updateSettings() {
   settings.compiler = State.compilers[selectedCompilerIndex.value]
-  settings.compilerOptions.architectureLevel = availableLevels.value.values[selectedArchitectureLevel.value]
+  settings.compilerOptions.architectureLevel =
+    availableLevels.value.values[selectedArchitectureLevel.value]
   settings.compilerOptions.disableOptimizations = !optimizations.value
   settings.compilerOptions.disableInlining = !inlining.value
   emit('update:settings', settings)
@@ -107,58 +116,67 @@ function updateSettings() {
 
 <template>
   <div class="source-panel">
-    <div class="labeled-item">
-      <label>Compiler:</label>
-      <DropDown
-        class="control dropdown"
-        :modelValue="selectedCompilerIndex"
-        @update:modelValue="selectCompiler"
-        :options="compilerNames"
-      ></DropDown>
-    </div>
+    <template v-if="settings.compiler">
+      <div class="labeled-item">
+        <label>Compiler:</label>
+        <DropDown
+          class="control dropdown"
+          :modelValue="selectedCompilerIndex"
+          @update:modelValue="selectCompiler"
+          :options="compilerNames"
+        ></DropDown>
+      </div>
 
-    <div class="labeled-item" v-if="availableLevels.values.length > 0">
-      <label>Architecture level:</label>
-      <DropDown
-        class="control"
-        style="width: 8rem"
-        :modelValue="selectedArchitectureLevel"
-        @update:modelValue="selectArchitectureLevel"
-        :options="availableLevels.names"
-      ></DropDown>
-    </div>
+      <div class="labeled-item" v-if="availableLevels.values.length > 0">
+        <label>Architecture level:</label>
+        <DropDown
+          class="control"
+          style="width: 8rem"
+          :modelValue="selectedArchitectureLevel"
+          @update:modelValue="selectArchitectureLevel"
+          :options="availableLevels.names"
+        ></DropDown>
+      </div>
 
-    <div class="item">
-      <GoceCheckbox class="control" v-model="optimizations" @update:modelValue="updateCompilerOptions"
-        >Optimizations</GoceCheckbox
-      >
-    </div>
+      <div class="item">
+        <GoceCheckbox
+          class="control"
+          v-model="optimizations"
+          @update:modelValue="updateCompilerOptions"
+          >Optimizations</GoceCheckbox
+        >
+      </div>
 
-    <div class="item">
-      <GoceCheckbox class="control" v-model="inlining" @update:modelValue="updateCompilerOptions"
-        >Inlining</GoceCheckbox
-      >
-    </div>
+      <div class="item">
+        <GoceCheckbox class="control" v-model="inlining" @update:modelValue="updateCompilerOptions"
+          >Inlining</GoceCheckbox
+        >
+      </div>
 
-    <div class="spacer"></div>
+      <div class="spacer"></div>
 
-    <div class="item">
-      <GoceButton @click="emit('diff')">
-        <i class="codicon codicon-diff"></i>
-        <span>Compare</span>
-      </GoceButton>
-    </div>
-    <div class="item">
-      <GoceButton @click="emit('format')">
-        <i class="codicon codicon-json"></i>
-        <span>Format</span>
-      </GoceButton>
-    </div>
-    <div class="item">
-      <GoceButton @click="emit('compile')">
-        <i class="codicon codicon-play"></i>
-        <span>Compile</span>
-      </GoceButton>
+      <div class="item">
+        <GoceButton @click="emit('diff')">
+          <i class="codicon codicon-diff"></i>
+          <span>Compare</span>
+        </GoceButton>
+      </div>
+      <div class="item">
+        <GoceButton @click="emit('format')">
+          <i class="codicon codicon-json"></i>
+          <span>Format</span>
+        </GoceButton>
+      </div>
+      <div class="item">
+        <GoceButton @click="emit('compile')">
+          <i class="codicon codicon-play"></i>
+          <span>Compile</span>
+        </GoceButton>
+      </div>
+    </template>
+
+    <div v-else class="labeled-item">
+      <label>No available compilers</label>
     </div>
   </div>
 </template>

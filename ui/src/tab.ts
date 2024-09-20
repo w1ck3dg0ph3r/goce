@@ -24,7 +24,7 @@ export class SourceTab extends Tab {
 }
 
 export interface SourceSettings {
-  compiler: CompilerInfo
+  compiler?: CompilerInfo
   compilerOptions: CompilerOptions
 }
 

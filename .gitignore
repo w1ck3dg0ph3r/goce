@@ -1,12 +1,4 @@
-/ui/dist/
-/ui/node_modules/
-
+/.cache
 /goce
-/__debug_bin
-/*.db
-
-goce.toml
-.env
-.env.production
 
 coverage.out
