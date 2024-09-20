@@ -170,7 +170,7 @@ bus.on('shareCode', async () => {
     }
   }
   let link = await API.shareCode(shared)
-  State.sharedCodeLink = `${API.baseUrl}/${link}`
+  State.sharedCodeLink = `${import.meta.env.VITE_APP_BASE_URL}/${link}`
 })
 
 function onCloseTab(id: symbol) {
