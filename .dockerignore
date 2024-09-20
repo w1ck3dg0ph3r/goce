@@ -19,4 +19,3 @@
 /ui/*.log
 /ui/pnpm-debug.log*
 /ui/.env
-/ui/.env.production
