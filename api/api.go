@@ -1,4 +1,4 @@
-package main
+package api
 
 import (
 	"fmt"
@@ -8,15 +8,17 @@ import (
 	"mvdan.cc/gofumpt/format"
 
 	"github.com/w1ck3dg0ph3r/goce/compilers"
+	"github.com/w1ck3dg0ph3r/goce/config"
 	"github.com/w1ck3dg0ph3r/goce/parsers"
+	"github.com/w1ck3dg0ph3r/goce/store"
 )
 
 type API struct {
-	Config *Config
+	Config *config.Config
 
-	CompilersSvc     *compilers.CompilersSvc
-	CompilationCache *CompilationCache
-	SharedCodeStore  *SharedCodeStore
+	Compilers        *compilers.Service
+	CompilationCache *store.CompilationCache
+	SharedCodeStore  *store.SharedCode
 }
 
 func (api *API) GetCompilers(ctx *fiber.Ctx) error {
@@ -25,7 +27,7 @@ func (api *API) GetCompilers(ctx *fiber.Ctx) error {
 		compilers.CompilerInfo
 	}
 	type Response []CompilerInfo
-	list := api.CompilersSvc.List()
+	list := api.Compilers.List()
 	res := make(Response, 0, len(list))
 	for i := range list {
 		res = append(res, CompilerInfo{
@@ -88,20 +90,20 @@ func (api *API) Compile(ctx *fiber.Ctx) error {
 	}
 	code := []byte(req.Code)
 
-	compiler := api.CompilersSvc.Default()
+	compiler := api.Compilers.Default()
 	if req.Name != "" {
-		compiler = api.CompilersSvc.Get(req.Name)
+		compiler = api.Compilers.Get(req.Name)
 	}
 	if compiler == nil {
 		return fiber.NewError(fiber.StatusNotFound, fmt.Sprintf("compiler not found: %s", req.Name))
 	}
 
-	cacheKey := CompilationCacheKey{
+	cacheKey := store.CompilationCacheKey{
 		CompilerName:    compInfo.Name(),
 		CompilerOptions: req.Options,
 		Code:            code,
 	}
-	var cacheValue CompilationCacheValue
+	var cacheValue store.CompilationCacheValue
 	if api.CompilationCache != nil {
 		if found, err := api.CompilationCache.Get(cacheKey, &cacheValue); found {
 			return ctx.JSON(Response(cacheValue))
@@ -153,8 +155,8 @@ func (api *API) ShareCode(ctx *fiber.Ctx) error {
 	type Response struct {
 		ID string `json:"id"`
 	}
-	id := NewSharedCodeKey()
-	val := SharedCodeValue{
+	id := store.NewSharedCodeKey()
+	val := store.SharedCodeValue{
 		Code: ctx.Body(),
 	}
 	if err := api.SharedCodeStore.Set(id, val, api.Config.SharedCodeTTL); err != nil {
@@ -166,11 +168,11 @@ func (api *API) ShareCode(ctx *fiber.Ctx) error {
 }
 
 func (api *API) GetSharedCode(ctx *fiber.Ctx) error {
-	id, err := ParseSharedCodeKey(ctx.Params("id"))
+	id, err := store.ParseSharedCodeKey(ctx.Params("id"))
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
-	var val SharedCodeValue
+	var val store.SharedCodeValue
 	if found, err := api.SharedCodeStore.Get(id, &val); !found {
 		return fiber.NewError(fiber.StatusNotFound, "shared code not found")
 	} else if err != nil {
@@ -187,7 +189,7 @@ func (api *API) gofumptVersionForCompiler(name string) string {
 	if name == "" {
 		return defaultVeriosn
 	}
-	compiler := api.CompilersSvc.Get(name)
+	compiler := api.Compilers.Get(name)
 	if compiler == nil {
 		return defaultVeriosn
 	}

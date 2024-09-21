@@ -1,7 +1,6 @@
 package main
 
 import (
-	"embed"
 	"errors"
 	"fmt"
 	"net/http"
@@ -17,17 +16,18 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 
-	"github.com/w1ck3dg0ph3r/goce/cache"
+	"github.com/w1ck3dg0ph3r/goce/api"
 	"github.com/w1ck3dg0ph3r/goce/compilers"
+	"github.com/w1ck3dg0ph3r/goce/config"
+	"github.com/w1ck3dg0ph3r/goce/pkg/cache"
+	"github.com/w1ck3dg0ph3r/goce/store"
+	"github.com/w1ck3dg0ph3r/goce/ui"
 )
-
-//go:embed ui/dist
-var distFS embed.FS
 
 var version string
 
 func main() {
-	cfg, err := ReadConfig()
+	cfg, err := config.Read()
 	if err != nil {
 		fmt.Printf("%v\n", err)
 		os.Exit(1)
@@ -63,25 +63,25 @@ func main() {
 		fmt.Printf("can't create data directory: %v", err.Error())
 	}
 
-	var compilationCache *cache.Cache[CompilationCacheKey, CompilationCacheValue]
+	var compilationCache *cache.Cache[store.CompilationCacheKey, store.CompilationCacheValue]
 	if cfg.Cache.Enabled {
-		compilationCache, err = NewCompilationCache("data/cache.db")
+		compilationCache, err = store.NewCompilationCache("data/cache.db")
 		if err != nil {
 			fmt.Printf("compilation cache: %v", err.Error())
 			os.Exit(1)
 		}
 	}
 
-	sharedCodeStore, err := NewSharedStore("data/shared.db")
+	sharedCodeStore, err := store.NewSharedCode("data/shared.db")
 	if err != nil {
 		fmt.Printf("shared code store: %v", err.Error())
 		os.Exit(1)
 	}
 
-	api := &API{
+	api := &api.API{
 		Config: cfg,
 
-		CompilersSvc:     compilersSvc,
+		Compilers:        compilersSvc,
 		CompilationCache: compilationCache,
 		SharedCodeStore:  sharedCodeStore,
 	}
@@ -119,10 +119,10 @@ func main() {
 
 func serveUI() fiber.Handler {
 	return filesystem.New(filesystem.Config{
-		Root:         http.FS(distFS),
-		PathPrefix:   "ui/dist",
+		Root:         http.FS(ui.DistFS),
+		PathPrefix:   "dist",
 		Index:        "index.html",
-		NotFoundFile: "ui/dist/index.html",
+		NotFoundFile: "dist/index.html",
 		MaxAge:       60,
 	})
 }

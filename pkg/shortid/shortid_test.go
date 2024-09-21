@@ -1,6 +1,7 @@
 package shortid
 
 import (
+	"errors"
 	"testing"
 )
 
@@ -24,7 +25,7 @@ func TestShortid(t *testing.T) {
 
 func TestShortidParseInvalid(t *testing.T) {
 	_, err := Parse("abcdef")
-	if err != ErrInvalid {
+	if !errors.Is(err, ErrInvalid) {
 		t.Errorf("expected ErrInvalid, got %v", err)
 	}
 }

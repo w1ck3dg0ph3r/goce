@@ -25,11 +25,15 @@ type Config struct {
 	AdditionalArchitectures bool // Add supported cross-compilation architectures
 }
 
-var ErrNoCompilers = errors.New("no compilers found")
+var (
+	ErrNoCompilers = errors.New("no compilers found")
+	ErrInvalidName = errors.New("invalid compiler name")
+	ErrInvalidPath = errors.New("invalid compiler path")
+)
 
-// New creates and initializes [CompilersSvc].
-func New(cfg *Config) (*CompilersSvc, error) {
-	svc := &CompilersSvc{
+// New creates and initializes [Service].
+func New(cfg *Config) (*Service, error) {
+	svc := &Service{
 		cfg: cfg,
 	}
 	if err := svc.refreshAvailable(); err != nil {
@@ -38,7 +42,7 @@ func New(cfg *Config) (*CompilersSvc, error) {
 	return svc, nil
 }
 
-type CompilersSvc struct {
+type Service struct {
 	cfg *Config
 
 	availableMu  sync.RWMutex
@@ -85,7 +89,7 @@ type Result struct {
 }
 
 // List returns available compilers.
-func (svc *CompilersSvc) List() []CompilerInfo {
+func (svc *Service) List() []CompilerInfo {
 	_ = svc.refreshAvailable()
 	svc.availableMu.RLock()
 	defer svc.availableMu.RUnlock()
@@ -97,7 +101,7 @@ func (svc *CompilersSvc) List() []CompilerInfo {
 }
 
 // Get returns compiler with a given name.
-func (svc *CompilersSvc) Get(name string) Compiler {
+func (svc *Service) Get(name string) Compiler {
 	_ = svc.refreshAvailable()
 	svc.availableMu.RLock()
 	defer svc.availableMu.RUnlock()
@@ -108,7 +112,7 @@ func (svc *CompilersSvc) Get(name string) Compiler {
 }
 
 // Default returns default compiler.
-func (svc *CompilersSvc) Default() Compiler {
+func (svc *Service) Default() Compiler {
 	_ = svc.refreshAvailable()
 	svc.availableMu.RLock()
 	defer svc.availableMu.RUnlock()
@@ -129,7 +133,7 @@ func ParseInfo(name string) (CompilerInfo, error) {
 	var ci CompilerInfo
 	match := reCompilerName.FindStringSubmatch(name)
 	if match == nil {
-		return ci, fmt.Errorf("invalid compiler name: %s", name)
+		return ci, fmt.Errorf("%w: %s", ErrInvalidName, name)
 	}
 	ci = CompilerInfo{
 		Version:      match[reCompilerName_Version],
@@ -151,7 +155,7 @@ type compilerDesc struct {
 	version *semver.Version
 }
 
-func (svc *CompilersSvc) refreshAvailable() error {
+func (svc *Service) refreshAvailable() error {
 	now := time.Now()
 	needRefresh := false
 	svc.availableMu.RLock()
@@ -176,7 +180,7 @@ func (svc *CompilersSvc) refreshAvailable() error {
 	return nil
 }
 
-func (svc *CompilersSvc) listAvailable() (availableCompilers, error) {
+func (svc *Service) listAvailable() (availableCompilers, error) {
 	ac := availableCompilers{
 		compilerByName: map[string]*compilerDesc{},
 	}
@@ -248,10 +252,10 @@ func (ac *availableCompilers) searchSDKPath() {
 func (ac *availableCompilers) addLocal(path string) error {
 	fs, err := os.Stat(path)
 	if err != nil {
-		return fmt.Errorf("register compiler: %w", err)
+		return fmt.Errorf("%w: %w", ErrInvalidPath, err)
 	}
 	if fs.Mode().Perm()&0o111 == 0 {
-		return fmt.Errorf("register compiler: not executable: %s", path)
+		return fmt.Errorf("%w: not executable: %s", ErrInvalidPath, path)
 	}
 
 	comp := &localCompiler{GoPath: path}

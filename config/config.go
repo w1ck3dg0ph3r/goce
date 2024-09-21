@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"os"
@@ -36,8 +36,8 @@ type Config struct {
 	}
 }
 
-// ReadConfig reads configuration options from available sources.
-func ReadConfig() (*Config, error) {
+// Read reads configuration options from available sources.
+func Read() (*Config, error) {
 	viper.MustBindEnv("Listen", "GOCE_LISTEN")
 	viper.MustBindEnv("CompilationCacheTTL", "GOCE_COMPILATION_CACHE_TTL")
 	viper.MustBindEnv("SharedCodeTTL", "GOCE_SHARED_CODE_TTL")

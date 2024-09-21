@@ -1,4 +1,4 @@
-VERSION=$(shell git describe --tags 2>/dev/null || git rev-parse --short=7 HEAD 2>/dev/null || echo -n tip)
+VERSION=$(shell git describe --tags 2>/dev/null || git rev-parse --short=7 HEAD 2>/dev/null || echo -n unknown)
 DOCKER_IMAGE=w1ck3dg0ph3r/goce
 DOCKER_TAG=$(DOCKER_IMAGE):latest
 
@@ -19,7 +19,7 @@ build-ui:
 	pnpm vite build --mode=localhost
 
 build-api:
-	go build -ldflags $(GO_LDFLAGS) .
+	go build -ldflags $(GO_LDFLAGS) ./cmd/goce
 
 test: test-api test-ui
 
@@ -35,7 +35,7 @@ test-ui:
 lint: lint-api lint-ui
 
 lint-api: install-golangcilint
-	golangci-lint run
+	golangci-lint run -v
 
 lint-ui:
 	@cd ui &&\
@@ -44,12 +44,13 @@ lint-ui:
 image:
 	docker build \
 		--build-arg version=$(VERSION) \
+		--build-arg ui_mode=localhost \
 		-t $(DOCKER_TAG) .
 
-image-local:
+image-production:
 	docker build \
 		--build-arg version=$(VERSION) \
-		--build-arg ui_mode=localhost \
+		--build-arg ui_mode=production \
 		-t $(DOCKER_TAG) .
 
 install-golangcilint:
