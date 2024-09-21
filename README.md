@@ -27,7 +27,7 @@ make
 Build the docker image:
 
 ```bash
-make image-local
+make image
 ```
 
 Prepare volume mounts for compilation cache, shared code storage and Go toolchains, module and build caches:

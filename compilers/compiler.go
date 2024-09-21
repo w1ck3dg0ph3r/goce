@@ -31,9 +31,9 @@ var (
 	ErrInvalidPath = errors.New("invalid compiler path")
 )
 
-// New creates and initializes [CompilersSvc].
-func New(cfg *Config) (*CompilersSvc, error) {
-	svc := &CompilersSvc{
+// New creates and initializes [Service].
+func New(cfg *Config) (*Service, error) {
+	svc := &Service{
 		cfg: cfg,
 	}
 	if err := svc.refreshAvailable(); err != nil {
@@ -42,7 +42,7 @@ func New(cfg *Config) (*CompilersSvc, error) {
 	return svc, nil
 }
 
-type CompilersSvc struct {
+type Service struct {
 	cfg *Config
 
 	availableMu  sync.RWMutex
@@ -89,7 +89,7 @@ type Result struct {
 }
 
 // List returns available compilers.
-func (svc *CompilersSvc) List() []CompilerInfo {
+func (svc *Service) List() []CompilerInfo {
 	_ = svc.refreshAvailable()
 	svc.availableMu.RLock()
 	defer svc.availableMu.RUnlock()
@@ -101,7 +101,7 @@ func (svc *CompilersSvc) List() []CompilerInfo {
 }
 
 // Get returns compiler with a given name.
-func (svc *CompilersSvc) Get(name string) Compiler {
+func (svc *Service) Get(name string) Compiler {
 	_ = svc.refreshAvailable()
 	svc.availableMu.RLock()
 	defer svc.availableMu.RUnlock()
@@ -112,7 +112,7 @@ func (svc *CompilersSvc) Get(name string) Compiler {
 }
 
 // Default returns default compiler.
-func (svc *CompilersSvc) Default() Compiler {
+func (svc *Service) Default() Compiler {
 	_ = svc.refreshAvailable()
 	svc.availableMu.RLock()
 	defer svc.availableMu.RUnlock()
@@ -155,7 +155,7 @@ type compilerDesc struct {
 	version *semver.Version
 }
 
-func (svc *CompilersSvc) refreshAvailable() error {
+func (svc *Service) refreshAvailable() error {
 	now := time.Now()
 	needRefresh := false
 	svc.availableMu.RLock()
@@ -180,7 +180,7 @@ func (svc *CompilersSvc) refreshAvailable() error {
 	return nil
 }
 
-func (svc *CompilersSvc) listAvailable() (availableCompilers, error) {
+func (svc *Service) listAvailable() (availableCompilers, error) {
 	ac := availableCompilers{
 		compilerByName: map[string]*compilerDesc{},
 	}

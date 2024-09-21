@@ -19,7 +19,7 @@ build-ui:
 	pnpm vite build --mode=localhost
 
 build-api:
-	go build -ldflags $(GO_LDFLAGS) .
+	go build -ldflags $(GO_LDFLAGS) ./cmd/goce
 
 test: test-api test-ui
 
@@ -44,12 +44,13 @@ lint-ui:
 image:
 	docker build \
 		--build-arg version=$(VERSION) \
+		--build-arg ui_mode=localhost \
 		-t $(DOCKER_TAG) .
 
-image-local:
+image-production:
 	docker build \
 		--build-arg version=$(VERSION) \
-		--build-arg ui_mode=localhost \
+		--build-arg ui_mode=production \
 		-t $(DOCKER_TAG) .
 
 install-golangcilint:

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/w1ck3dg0ph3r/goce/cache"
+	"github.com/w1ck3dg0ph3r/goce/pkg/cache"
 )
 
 func TestCache(t *testing.T) {

@@ -1,8 +1,8 @@
-package main
+package store
 
 import (
-	"github.com/w1ck3dg0ph3r/goce/cache"
-	"github.com/w1ck3dg0ph3r/goce/shortid"
+	"github.com/w1ck3dg0ph3r/goce/pkg/cache"
+	"github.com/w1ck3dg0ph3r/goce/pkg/shortid"
 )
 
 type SharedCodeKey struct {
@@ -13,9 +13,9 @@ type SharedCodeValue struct {
 	Code []byte
 }
 
-type SharedCodeStore = cache.Cache[SharedCodeKey, SharedCodeValue]
+type SharedCode = cache.Cache[SharedCodeKey, SharedCodeValue]
 
-func NewSharedStore(filename string) (*SharedCodeStore, error) {
+func NewSharedCode(filename string) (*SharedCode, error) {
 	return cache.New[SharedCodeKey, SharedCodeValue](filename)
 }
 

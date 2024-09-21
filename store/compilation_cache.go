@@ -1,13 +1,13 @@
-package main
+package store
 
 import (
 	"bufio"
 	"crypto/sha256"
 	"encoding/json"
 
-	"github.com/w1ck3dg0ph3r/goce/cache"
 	"github.com/w1ck3dg0ph3r/goce/compilers"
 	"github.com/w1ck3dg0ph3r/goce/parsers"
+	"github.com/w1ck3dg0ph3r/goce/pkg/cache"
 )
 
 type CompilationCacheKey struct {

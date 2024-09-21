@@ -15,8 +15,8 @@ RUN go mod download
 COPY . .
 COPY --from=ui-builder /src/ui/dist ./ui/dist
 RUN \
-  go build -o /bin/goce -ldflags "-s -w -X main.version=${version}" . &&\
-  go build -o /bin/godl -ldflags "-s -w" ./tools/godl
+  go build -o /bin/goce -ldflags "-s -w -X main.version=${version}" ./cmd/goce &&\
+  go build -o /bin/godl -ldflags "-s -w" ./cmd/tools/godl
 
 FROM alpine:3.20
 RUN apk add ca-certificates tzdata curl tar git
