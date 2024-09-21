@@ -22,7 +22,7 @@ make
 ./goce
 ```
 
-### In the docker container
+### Inside the docker container
 
 Build the docker image:
 

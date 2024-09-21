@@ -1,4 +1,4 @@
-VERSION=$(shell git describe --tags 2>/dev/null || git rev-parse --short=7 HEAD 2>/dev/null || echo -n tip)
+VERSION=$(shell git describe --tags 2>/dev/null || git rev-parse --short=7 HEAD 2>/dev/null || echo -n unknown)
 DOCKER_IMAGE=w1ck3dg0ph3r/goce
 DOCKER_TAG=$(DOCKER_IMAGE):latest
 
