@@ -236,7 +236,7 @@ func buildGoce(t *testing.T) string {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
-	pkg := filepath.Join(cwd, "..")
+	pkg := filepath.Join(cwd, "../cmd/goce")
 	binary := filepath.Join(t.TempDir(), "goce")
 	fmt.Printf("building goce: %q\n", binary)
 	cmd := exec.Command("go", "build", "-o", binary, pkg)
