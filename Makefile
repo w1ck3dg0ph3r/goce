@@ -35,7 +35,7 @@ test-ui:
 lint: lint-api lint-ui
 
 lint-api: install-golangcilint
-	golangci-lint run
+	golangci-lint run -v
 
 lint-ui:
 	@cd ui &&\

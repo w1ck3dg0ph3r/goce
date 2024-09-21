@@ -293,6 +293,7 @@ func waitForAPI(t *testing.T, url string) {
 		if err != nil {
 			continue
 		}
+		res.Body.Close()
 		if res.StatusCode == http.StatusOK || res.StatusCode == http.StatusNotFound {
 			break
 		}

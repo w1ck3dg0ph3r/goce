@@ -115,13 +115,13 @@ func (c *localCompiler) Info() (CompilerInfo, error) {
 	cmd := exec.Command(c.GoPath, "version")
 	out, err := cmd.Output()
 	if err != nil {
-		return CompilerInfo{}, fmt.Errorf("cant run go version: %w", err)
+		return CompilerInfo{}, fmt.Errorf("%w: go version: %w", ErrInvalidPath, err)
 	}
 	out = bytes.TrimPrefix(out, []byte("go version "))
 	out = bytes.TrimSpace(out)
 	match := reGoVersion.FindSubmatch(out)
 	if match == nil {
-		return CompilerInfo{}, fmt.Errorf("cant parse go version: %q", string(out))
+		return CompilerInfo{}, fmt.Errorf("%w: go version: %q", ErrInvalidPath, string(out))
 	}
 	c.info = CompilerInfo{
 		Version:      string(match[reGoVersion_Version]),

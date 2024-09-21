@@ -2,7 +2,7 @@ package main
 
 import (
 	"bufio"
-	"crypto/md5"
+	"crypto/sha256"
 	"encoding/json"
 
 	"github.com/w1ck3dg0ph3r/goce/cache"
@@ -29,8 +29,8 @@ func NewCompilationCache(filename string) (*CompilationCache, error) {
 }
 
 func (k CompilationCacheKey) Hash() []byte {
-	var sum [16]byte
-	h := md5.New()
+	var sum [32]byte
+	h := sha256.New()
 	br := bufio.NewWriter(h)
 	_, _ = br.WriteString(k.CompilerName)
 	je := json.NewEncoder(br)

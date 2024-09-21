@@ -25,7 +25,11 @@ type Config struct {
 	AdditionalArchitectures bool // Add supported cross-compilation architectures
 }
 
-var ErrNoCompilers = errors.New("no compilers found")
+var (
+	ErrNoCompilers = errors.New("no compilers found")
+	ErrInvalidName = errors.New("invalid compiler name")
+	ErrInvalidPath = errors.New("invalid compiler path")
+)
 
 // New creates and initializes [CompilersSvc].
 func New(cfg *Config) (*CompilersSvc, error) {
@@ -129,7 +133,7 @@ func ParseInfo(name string) (CompilerInfo, error) {
 	var ci CompilerInfo
 	match := reCompilerName.FindStringSubmatch(name)
 	if match == nil {
-		return ci, fmt.Errorf("invalid compiler name: %s", name)
+		return ci, fmt.Errorf("%w: %s", ErrInvalidName, name)
 	}
 	ci = CompilerInfo{
 		Version:      match[reCompilerName_Version],
@@ -248,10 +252,10 @@ func (ac *availableCompilers) searchSDKPath() {
 func (ac *availableCompilers) addLocal(path string) error {
 	fs, err := os.Stat(path)
 	if err != nil {
-		return fmt.Errorf("register compiler: %w", err)
+		return fmt.Errorf("%w: %w", ErrInvalidPath, err)
 	}
 	if fs.Mode().Perm()&0o111 == 0 {
-		return fmt.Errorf("register compiler: not executable: %s", path)
+		return fmt.Errorf("%w: not executable: %s", ErrInvalidPath, path)
 	}
 
 	comp := &localCompiler{GoPath: path}
