@@ -17,18 +17,20 @@ import (
 )
 
 type Config struct {
-	SearchGoPath  bool // Search PATH for go compilers
-	SearchSDKPath bool // Search ~/sdk/go* for go compilers
+	SearchGoPath   bool     // Search PATH for go compilers.
+	SearchSDKPath  bool     // Search ~/sdk/go* for go compilers.
+	LocalCompilers []string // Paths of local go compiler executables.
 
-	LocalCompilers []string // Paths of local go compiler executables
+	AdditionalArchitectures bool // Add supported cross-compilation architectures.
 
-	AdditionalArchitectures bool // Add supported cross-compilation architectures
+	EnableModules bool // Enable modules support.
 }
 
 var (
 	ErrNoCompilers = errors.New("no compilers found")
 	ErrInvalidName = errors.New("invalid compiler name")
 	ErrInvalidPath = errors.New("invalid compiler path")
+	ErrBuildFailed = errors.New("build failed")
 )
 
 // New creates and initializes [Service].
@@ -51,6 +53,7 @@ type Service struct {
 }
 
 type availableCompilers struct {
+	cfg             *Config
 	compilers       []*compilerDesc
 	compilerByName  map[string]*compilerDesc
 	defaultCompiler *compilerDesc
@@ -182,6 +185,7 @@ func (svc *Service) refreshAvailable() error {
 
 func (svc *Service) listAvailable() (availableCompilers, error) {
 	ac := availableCompilers{
+		cfg:            svc.cfg,
 		compilerByName: map[string]*compilerDesc{},
 	}
 
@@ -258,7 +262,10 @@ func (ac *availableCompilers) addLocal(path string) error {
 		return fmt.Errorf("%w: not executable: %s", ErrInvalidPath, path)
 	}
 
-	comp := &localCompiler{GoPath: path}
+	comp := &localCompiler{
+		GoPath:        path,
+		EnableModules: ac.cfg.EnableModules,
+	}
 	info, err := comp.Info()
 	if err != nil {
 		return err

@@ -29,6 +29,9 @@ type Config struct {
 
 		// Add supported cross-compilation architectures.
 		AdditionalArchitectures bool
+
+		// Enable modules support.
+		EnableModules bool
 	}
 
 	Cache struct {
@@ -45,6 +48,7 @@ func Read() (*Config, error) {
 	viper.MustBindEnv("Compilers.SearchSDKPath", "GOCE_COMPILERS_SEARCH_SDK_PATH")
 	viper.MustBindEnv("Compilers.LocalCompilers", "GOCE_COMPILERS_LOCAL_COMPILERS")
 	viper.MustBindEnv("Compilers.AdditionalArchitectures", "GOCE_COMPILERS_ADDITIONAL_ARCHITECTURES")
+	viper.MustBindEnv("Compilers.EnableModules", "GOCE_COMPILERS_ENABLE_MODULES")
 	viper.MustBindEnv("Cache.Enabled", "GOCE_CACHE_ENABLED")
 
 	viper.SetDefault("Listen", ":9000")
@@ -54,6 +58,7 @@ func Read() (*Config, error) {
 	viper.SetDefault("Compilers.SearchSDKPath", true)
 	viper.SetDefault("Compilers.LocalCompilers", []string{})
 	viper.SetDefault("Compilers.AdditionalArchitectures", true)
+	viper.SetDefault("Compilers.EnableModules", true)
 	viper.SetDefault("Cache.Enabled", true)
 
 	home, err := os.UserHomeDir()

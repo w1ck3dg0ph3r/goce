@@ -199,11 +199,14 @@ async function getAvailableCompilers() {
   }
 }
 
-const defaultCode = `package main
+const defaultCode = `\
+package main
 
 import (
 	"fmt"
 	"math"
+
+	"github.com/shopspring/decimal"
 )
 
 func fibonacci(n int) int {
@@ -222,6 +225,8 @@ func sqrt(x float32) float32 {
 }
 
 func main() {
+	d := decimal.New(42, -1)
+	fmt.Println(d.String())
 	res := fibonacci(3)
 	fmt.Println(res)
 	fmt.Println(sqrt(float32(res)))

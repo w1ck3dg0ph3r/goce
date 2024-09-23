@@ -53,6 +53,7 @@ func main() {
 		SearchSDKPath:           cfg.Compilers.SearchSDKPath,
 		LocalCompilers:          cfg.Compilers.LocalCompilers,
 		AdditionalArchitectures: cfg.Compilers.AdditionalArchitectures,
+		EnableModules:           cfg.Compilers.EnableModules,
 	})
 	if err != nil {
 		fmt.Printf("compilers service: %v\n", err)

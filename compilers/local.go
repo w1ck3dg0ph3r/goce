@@ -12,97 +12,45 @@ import (
 )
 
 type localCompiler struct {
-	GoPath string
+	GoPath        string
+	EnableModules bool
 
 	info CompilerInfo
 }
 
 func (c *localCompiler) Compile(ctx context.Context, config CompilerConfig, code []byte) (Result, error) {
-	tmpDir := filepath.Join(os.TempDir(), "goce")
-	if err := os.MkdirAll(tmpDir, 0o777); err != nil {
-		return Result{}, fmt.Errorf("create tmp dir: %w", err)
-	}
-	buildDir, err := os.MkdirTemp(tmpDir, "build-")
+	info, err := c.Info()
 	if err != nil {
-		return Result{}, fmt.Errorf("create tmp dir: %w", err)
+		return Result{}, fmt.Errorf("get compiler info: %w", err)
 	}
-	defer os.RemoveAll(buildDir)
+	run := &localRun{
+		GoPath: c.GoPath,
+		Code:   code,
+		Info:   info,
+		Config: config,
+	}
+	if err := run.Prepare(); err != nil {
+		return Result{}, fmt.Errorf("prepare: %w", err)
+	}
+	defer run.Close()
 
-	const goFilename = "main.go"
-	mainFilename := filepath.Join(buildDir, goFilename)
-	fmain, err := os.Create(mainFilename)
-	if err != nil {
-		return Result{}, fmt.Errorf("create source file: %w", err)
-	}
-	if _, err := fmain.Write(code); err != nil {
-		return Result{}, fmt.Errorf("write source file: %w", err)
-	}
-	fmain.Close()
-
-	buildEnv := os.Environ()
-	if config.Platform != c.info.Platform {
-		buildEnv = append(buildEnv, fmt.Sprintf("GOOS=%s", config.Platform))
-	}
-	if config.Architecture != c.info.Architecture {
-		buildEnv = append(buildEnv, fmt.Sprintf("GOARCH=%s", config.Architecture))
-	}
-	if config.Options.ArchitectureLevel != "" {
-		switch config.Architecture {
-		case "amd64":
-			buildEnv = append(buildEnv, fmt.Sprintf("GOAMD64=%s", config.Options.ArchitectureLevel))
-		case "ppc64":
-			buildEnv = append(buildEnv, fmt.Sprintf("GOPPC64=%s", config.Options.ArchitectureLevel))
-		case "386":
-			buildEnv = append(buildEnv, fmt.Sprintf("GO386=%s", config.Options.ArchitectureLevel))
-		case "arm":
-			buildEnv = append(buildEnv, fmt.Sprintf("GOARM=%s", config.Options.ArchitectureLevel))
+	if c.EnableModules {
+		if err := run.InitModules(ctx); err != nil {
+			return Result{}, fmt.Errorf("init modules: %w", err)
 		}
 	}
 
 	res := Result{
-		CompilerInfo:   c.info,
-		SourceFilename: mainFilename,
+		CompilerInfo:   info,
+		SourceFilename: run.mainBasename,
 		SourceCode:     code,
 	}
-
-	cmd := exec.CommandContext(ctx, c.GoPath, "build", "-o", os.DevNull, goFilename)
-	cmd.Dir = buildDir
-	cmd.Env = buildEnv
-	output, err := cmd.CombinedOutput()
-	output, _ = bytes.CutPrefix(output, []byte("# command-line-arguments\n"))
-	res.BuildOutput = output
-	if err != nil {
+	if res.BuildOutput, err = run.Build(ctx); err != nil {
 		return res, fmt.Errorf("build: %w", err)
 	}
-
-	args := []string{"build", "-o", "main", "-trimpath", "-gcflags"}
-	var gcflags []string
-	if config.Options.DisableInlining {
-		gcflags = append(gcflags, "-l")
-	}
-	if config.Options.DisableOptimizations {
-		gcflags = append(gcflags, "-N")
-	}
-	gcflags = append(gcflags, "-m=2")
-	args = append(args, strings.Join(gcflags, " "))
-	args = append(args, goFilename)
-	cmd = exec.CommandContext(ctx, c.GoPath, args...)
-	cmd.Dir = buildDir
-	cmd.Env = buildEnv
-	output, err = cmd.CombinedOutput()
-	output, _ = bytes.CutPrefix(output, []byte("# command-line-arguments\n"))
-	res.BuildOutput = output
-	if err != nil {
-		return res, fmt.Errorf("debug: %w", err)
-	}
-
-	cmd = exec.CommandContext(ctx, c.GoPath, "tool", "objdump", "-s", "^main\\.", "main")
-	cmd.Dir = buildDir
-	output, err = cmd.CombinedOutput()
-	if err != nil {
+	if res.ObjdumpOutput, err = run.Objdump(ctx); err != nil {
 		return res, fmt.Errorf("objdump: %w", err)
 	}
-	res.ObjdumpOutput = output
 
 	return res, nil
 }
@@ -129,6 +77,138 @@ func (c *localCompiler) Info() (CompilerInfo, error) {
 		Architecture: string(match[reGoVersion_Architecture]),
 	}
 	return c.info, nil
+}
+
+type localRun struct {
+	GoPath string
+	Code   []byte
+	Info   CompilerInfo
+	Config CompilerConfig
+
+	buildDir     string
+	buildEnv     []string
+	mainBasename string
+}
+
+func (r *localRun) Prepare() error {
+	tmpDir := filepath.Join(os.TempDir(), "goce")
+	if err := os.MkdirAll(tmpDir, 0o777); err != nil {
+		return fmt.Errorf("create tmp dir: %w", err)
+	}
+	buildDir, err := os.MkdirTemp(tmpDir, "build-")
+	if err != nil {
+		return fmt.Errorf("create tmp dir: %w", err)
+	}
+	r.buildDir = buildDir
+
+	r.mainBasename = "main.go"
+	mainFilename := filepath.Join(buildDir, r.mainBasename)
+	fmain, err := os.Create(mainFilename)
+	if err != nil {
+		return fmt.Errorf("create source file: %w", err)
+	}
+	if _, err := fmain.Write(r.Code); err != nil {
+		return fmt.Errorf("write source file: %w", err)
+	}
+	fmain.Close()
+
+	return nil
+}
+
+func (r *localRun) Close() {
+	os.RemoveAll(r.buildDir)
+}
+
+func (r *localRun) InitModules(ctx context.Context) error {
+	cmd := exec.CommandContext(ctx, r.GoPath, "mod", "init", "goce-build")
+	cmd.Dir = r.buildDir
+	cmd.Env = r.BuildEnv()
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("go mod init: %w", err)
+	}
+	cmd = exec.CommandContext(ctx, r.GoPath, "mod", "tidy")
+	cmd.Dir = r.buildDir
+	cmd.Env = r.BuildEnv()
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("go mod tidy: %w", err)
+	}
+	return nil
+}
+
+func (r *localRun) Build(ctx context.Context) ([]byte, error) {
+	if errors := r.buildErrors(ctx); errors != nil {
+		return errors, ErrBuildFailed
+	}
+
+	args := []string{"build", "-o", "main", "-trimpath", "-gcflags"}
+	var gcflags []string
+	if r.Config.Options.DisableInlining {
+		gcflags = append(gcflags, "-l")
+	}
+	if r.Config.Options.DisableOptimizations {
+		gcflags = append(gcflags, "-N")
+	}
+	gcflags = append(gcflags, "-m=2")
+	args = append(args, strings.Join(gcflags, " "))
+	args = append(args, r.mainBasename)
+	cmd := exec.CommandContext(ctx, r.GoPath, args...)
+	cmd.Dir = r.buildDir
+	cmd.Env = r.BuildEnv()
+	output, err := cmd.CombinedOutput()
+	output, _ = bytes.CutPrefix(output, []byte("# command-line-arguments\n"))
+	if err != nil {
+		return nil, err
+	}
+	return output, nil
+}
+
+func (r *localRun) Objdump(ctx context.Context) ([]byte, error) {
+	cmd := exec.CommandContext(ctx, r.GoPath, "tool", "objdump", "-s", "^main\\.", "main")
+	cmd.Dir = r.buildDir
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return nil, err
+	}
+	return output, nil
+}
+
+func (r *localRun) buildErrors(ctx context.Context) []byte {
+	cmd := exec.CommandContext(ctx, r.GoPath, "build", "-o", os.DevNull, r.mainBasename)
+	cmd.Dir = r.buildDir
+	cmd.Env = r.BuildEnv()
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		output, _ = bytes.CutPrefix(output, []byte("# command-line-arguments\n"))
+		return output
+	}
+	return nil
+}
+
+func (r *localRun) BuildEnv() []string {
+	if r.buildEnv != nil {
+		return r.buildEnv
+	}
+	e := os.Environ()
+	if r.Config.Platform != r.Info.Platform {
+		e = append(e, fmt.Sprintf("GOOS=%s", r.Config.Platform))
+	}
+	if r.Config.Architecture != r.Info.Architecture {
+		e = append(e, fmt.Sprintf("GOARCH=%s", r.Config.Architecture))
+	}
+	if r.Config.Options.ArchitectureLevel != "" {
+		switch r.Config.Architecture {
+		case "amd64":
+			e = append(e, fmt.Sprintf("GOAMD64=%s", r.Config.Options.ArchitectureLevel))
+		case "ppc64":
+			e = append(e, fmt.Sprintf("GOPPC64=%s", r.Config.Options.ArchitectureLevel))
+		case "386":
+			e = append(e, fmt.Sprintf("GO386=%s", r.Config.Options.ArchitectureLevel))
+		case "arm":
+			e = append(e, fmt.Sprintf("GOARM=%s", r.Config.Options.ArchitectureLevel))
+		}
+	}
+	r.buildEnv = e
+	return r.buildEnv
 }
 
 var reGoVersion = regexp.MustCompile(`go(\d+\.\d+(\.\d+)?)\s+(\w+)/(\w+)`)
