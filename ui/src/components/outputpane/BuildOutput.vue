@@ -20,11 +20,11 @@ type Line = Token[]
 const lines = computed((): Line[] => {
   if (!props.value) return []
   return props.value.split('\n').map((line) => {
-    let tokens: Token[] = []
-    let matches = line.matchAll(/\.\/main\.go:(\d+):(\d+)/g)
+    const tokens: Token[] = []
+    const matches = line.matchAll(/\.\/main\.go:(\d+):(\d+)/g)
     if (matches) {
       let pos = 0
-      for (let match of matches) {
+      for (const match of matches) {
         if ((match.index || 0) > pos) {
           tokens.push({ text: line.substring(pos, match.index) })
         }
@@ -52,9 +52,9 @@ const lines = computed((): Line[] => {
       <div v-for="(l, i) of lines" :key="i" class="line">
         <template v-for="t of l" :key="t">
           <span v-if="t.line">
-            <a href="" @click.prevent="emit('jumpToSource', t.line, t.column)" v-text="t.text"> </a>
+            <a href="" @click.prevent="emit('jumpToSource', t.line, t.column)" v-text="t.text" />
           </span>
-          <span v-else v-text="t.text"></span>
+          <span v-else v-text="t.text" />
         </template>
       </div>
     </div>

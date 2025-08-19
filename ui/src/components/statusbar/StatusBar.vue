@@ -56,9 +56,11 @@ const statusText = computed(() => {
 
 <template>
   <div class="status-bar" :class="{ error: isError }">
-    <i class="codicon" :class="statusIcon"></i>
-    <div class="text">{{ statusText }}</div>
-    <div class="spacer"></div>
+    <i class="codicon" :class="statusIcon" />
+    <div class="text">
+      {{ statusText }}
+    </div>
+    <div class="spacer" />
     <div class="cursor-position">
       Ln {{ props.state.cursorPosition.lineNumber }}, Col {{ props.state.cursorPosition.column }}
     </div>
@@ -67,7 +69,7 @@ const statusText = computed(() => {
         <i
           class="codicon"
           :class="`codicon-chevron-${props.state.bottomPaneVisible ? 'down' : 'up'}`"
-        ></i>
+        />
       </button>
     </div>
   </div>

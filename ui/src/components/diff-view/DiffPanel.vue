@@ -83,31 +83,31 @@ function swapSources() {
     <div class="labeled-item">
       <label>Original:</label>
       <DropDown
-        class="control dropdown"
         v-model="selected.original"
-        @update:modelValue="updateSettings"
+        class="control dropdown"
         :options="tabNames"
-      ></DropDown>
+        @update:model-value="updateSettings"
+      />
     </div>
 
     <div class="item">
       <GoceButton @click="swapSources">
-        <i class="codicon codicon-arrow-swap"></i>
+        <i class="codicon codicon-arrow-swap" />
       </GoceButton>
     </div>
     <div class="labeled-item">
       <label>Modified:</label>
       <DropDown
-        class="control"
         v-model="selected.modified"
-        @update:modelValue="updateSettings"
+        class="control"
         :options="tabNames"
-      ></DropDown>
+        @update:model-value="updateSettings"
+      />
     </div>
 
     <div class="labeled-item">
       <label>Style:</label>
-      <GoceCheckbox v-model="showInline" @update:modelValue="updateSettings" class="control">
+      <GoceCheckbox v-model="showInline" class="control" @update:model-value="updateSettings">
         Inline
       </GoceCheckbox>
     </div>

@@ -51,7 +51,7 @@ async function formatCode() {
 
   state.status = Status.Formatting
   try {
-    let res = await API.formatCode(props.code, props.settings.compiler.name)
+    const res = await API.formatCode(props.code, props.settings.compiler.name)
     if (res.code !== '') {
       updateCode(res.code)
     }
@@ -75,7 +75,7 @@ async function compileCode() {
   state.status = Status.Compiling
   state.buildOutput = ''
   try {
-    let compiled = await API.compileCode(
+    const compiled = await API.compileCode(
       props.code,
       props.settings.compiler.name,
       props.settings.compilerOptions
@@ -129,7 +129,7 @@ function applySettings() {
       @diff="emit('diff')"
       @format="formatCode"
       @compile="compileCode"
-    ></SourcePanel>
+    />
 
     <Splitter horizontal class="main">
       <Panel :min-size="15">
@@ -138,28 +138,28 @@ function applySettings() {
             <CodeEditor
               ref="$codeEditor"
               :code="props.code"
+              :source-map="state.sourceMap"
               @update:code="updateCode"
-              :sourceMap="state.sourceMap"
-              @formatCode="formatCode"
-              @cursorMoved="state.cursorPosition = $event"
-              @lineHovered="state.sourceMap.highlightFromSource($event)"
-              @revealAssembly="revealAssembly"
-            ></CodeEditor>
+              @format-code="formatCode"
+              @cursor-moved="state.cursorPosition = $event"
+              @line-hovered="state.sourceMap.highlightFromSource($event)"
+              @reveal-assembly="revealAssembly"
+            />
           </Panel>
           <Panel class="asm-view">
             <AsmView
               ref="$asmView"
-              :sourceMap="state.sourceMap"
-              @lineHovered="state.sourceMap.highlightFromAssembly($event)"
-              @revealSource="revealSource"
-            ></AsmView>
-            <LoadingIndicator v-if="state.status == Status.Compiling"></LoadingIndicator>
+              :source-map="state.sourceMap"
+              @line-hovered="state.sourceMap.highlightFromAssembly($event)"
+              @reveal-source="revealSource"
+            />
+            <LoadingIndicator v-if="state.status == Status.Compiling" />
           </Panel>
         </Splitter>
       </Panel>
 
       <Panel v-if="state.bottomPanelVisible" :min-size="15" :size="25">
-        <OutputPane :buildOutput="state.buildOutput" @jumpToSource="jumpToSource"></OutputPane>
+        <OutputPane :build-output="state.buildOutput" @jump-to-source="jumpToSource" />
       </Panel>
     </Splitter>
     <StatusBar
@@ -168,8 +168,8 @@ function applySettings() {
         bottomPaneVisible: state.bottomPanelVisible,
         cursorPosition: state.cursorPosition,
       }"
-      @toggleBottomPanel="state.bottomPanelVisible = !state.bottomPanelVisible"
-    ></StatusBar>
+      @toggle-bottom-panel="state.bottomPanelVisible = !state.bottomPanelVisible"
+    />
   </div>
 </template>
 

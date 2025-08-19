@@ -21,7 +21,7 @@ function onClick() {
 <template>
   <button class="checkbox" @click="onClick">
     <i class="codicon" :class="iconName" />
-    <slot></slot>
+    <slot />
   </button>
 </template>
 

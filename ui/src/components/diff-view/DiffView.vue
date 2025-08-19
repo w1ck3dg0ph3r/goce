@@ -33,12 +33,12 @@ function applySettings(settings: DiffSettings) {
 
 <template>
   <div class="diff-view">
-    <DiffPanel :tabs="props.tabs" :settings="settings" @update:settings="applySettings"></DiffPanel>
+    <DiffPanel :tabs="props.tabs" :settings="settings" @update:settings="applySettings" />
     <MonacoDiff
       ref="$editor"
       class="diff-editor"
-      :codeLeft="codeLeft"
-      :codeRight="codeRight"
+      :code-left="codeLeft"
+      :code-right="codeRight"
       :theme="State.theme"
       :options="{
         fontSize: 12,
@@ -48,7 +48,7 @@ function applySettings(settings: DiffSettings) {
         enableSplitViewResizing: false,
         renderSideBySide: !settings?.inline,
       }"
-    ></MonacoDiff>
+    />
   </div>
 </template>
 

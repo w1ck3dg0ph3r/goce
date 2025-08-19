@@ -31,7 +31,7 @@ const $editor = ref<InstanceType<typeof MonacoEditor> | null>(null)
 let lineHasAssembly: monaco.editor.IContextKey<boolean>
 
 onMounted(() => {
-  let editor = $editor.value!.getEditor()
+  const editor = $editor.value!.getEditor()
   lineHasAssembly = editor.createContextKey('lineHasAssembly', false)
 
   editor.addAction({
@@ -41,7 +41,7 @@ onMounted(() => {
     precondition: 'lineHasAssembly',
     keybindings: [monaco.KeyCode.F4],
     run() {
-      let sourceLine = editor?.getPosition()?.lineNumber
+      const sourceLine = editor?.getPosition()?.lineNumber
       if (sourceLine) {
         emit('revealAssembly', sourceLine)
         emit('lineHovered', sourceLine)
@@ -92,14 +92,14 @@ function lineHovered(lineNumber: number) {
   <MonacoEditor
     ref="$editor"
     :code="props.code"
-    @update:code="emit('update:code', $event)"
     :theme="State.theme"
     language="go"
     :options="{
       fontSize: 12,
     }"
-    @hover="lineHovered"
     :decorations="props.sourceMap.sourceDecorations"
     :highlights="highlightedLines"
-  ></MonacoEditor>
+    @update:code="emit('update:code', $event)"
+    @hover="lineHovered"
+  />
 </template>

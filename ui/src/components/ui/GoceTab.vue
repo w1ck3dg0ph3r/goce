@@ -37,7 +37,7 @@ const isActive = computed(() => tabsInjection.activeTabId.value == props.tabId)
 
 <template>
   <div :class="{ hidden: !isActive }" class="tab-content">
-    <slot></slot>
+    <slot />
   </div>
 </template>
 

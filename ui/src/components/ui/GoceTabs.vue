@@ -18,10 +18,10 @@ export const TabsInjectionKey = Symbol('tabs') as InjectionKey<{
 </script>
 
 <script setup lang="ts">
-const tabs = reactive(new Map<Symbol, TabData>())
-let activeTabId: Ref<symbol | null> = ref(null)
+const tabs = reactive(new Map<symbol, TabData>())
+const activeTabId: Ref<symbol | null> = ref(null)
 
-let $tabHeader: Ref<HTMLElement | null> = ref(null)
+const $tabHeader: Ref<HTMLElement | null> = ref(null)
 
 const props = withDefaults(
   defineProps<{
@@ -56,7 +56,7 @@ provide(TabsInjectionKey, {
 })
 
 const tabList = computed(() => {
-  let entries = Array.from(tabs.values())
+  const entries = Array.from(tabs.values())
   entries.sort((a, b) => a.order - b.order)
   return entries
 })
@@ -101,9 +101,9 @@ function closeTab(id: symbol) {
   emit('closeTabClicked', id)
 }
 
-let $draggingButton: Ref<HTMLElement | null> = ref(null)
-let isDraggingStarted = ref(false)
-let isDragging = ref(false)
+const $draggingButton: Ref<HTMLElement | null> = ref(null)
+const isDraggingStarted = ref(false)
+const isDragging = ref(false)
 const dragState = reactive<{
   index: number
   id: symbol | null
@@ -126,7 +126,7 @@ function startDragging(id: symbol, ev: MouseEvent) {
   selectTab(id)
   if (tabs.size == 1) return
 
-  let tabButtons = $tabHeader.value?.children
+  const tabButtons = $tabHeader.value?.children
   if (!tabButtons) return
 
   const tab = tabs.get(id)
@@ -146,30 +146,30 @@ function swapTabs(i: number, j: number) {
 }
 
 function handleDragging(ev: MouseEvent) {
-  let el = $draggingButton.value
+  const el = $draggingButton.value
   if (!isDraggingStarted.value || !el) return
 
-  let tabButtons = $tabHeader.value?.children
+  const tabButtons = $tabHeader.value?.children
   if (!tabButtons) return
 
-  let delta = ev.clientX - dragState.start
+  const delta = ev.clientX - dragState.start
   if (Math.abs(delta) > 2) {
     isDragging.value = true
   }
 
-  let left = dragState.left + delta
-  let right = left + el.clientWidth
+  const left = dragState.left + delta
+  const right = left + el.clientWidth
   if (dragState.index > 0) {
-    let prev = tabButtons[dragState.index - 1] as HTMLElement
-    let middle = prev.offsetLeft + prev.clientWidth * 0.25
+    const prev = tabButtons[dragState.index - 1] as HTMLElement
+    const middle = prev.offsetLeft + prev.clientWidth * 0.25
     if (left < middle) {
       swapTabs(dragState.index, dragState.index - 1)
       dragState.index = dragState.index - 1
     }
   }
   if (dragState.index < tabs.size - 1) {
-    let next = tabButtons[dragState.index + 1] as HTMLElement
-    let middle = next.offsetLeft + next.clientWidth * 0.75
+    const next = tabButtons[dragState.index + 1] as HTMLElement
+    const middle = next.offsetLeft + next.clientWidth * 0.75
     if (right > middle) {
       swapTabs(dragState.index, dragState.index + 1)
       dragState.index = dragState.index + 1
@@ -181,7 +181,7 @@ function handleDragging(ev: MouseEvent) {
 function stopDragging() {
   isDragging.value = false
   isDraggingStarted.value = false
-  let el = $draggingButton.value
+  const el = $draggingButton.value
   if (el) {
     el.style.position = ''
     el.style.marginLeft = ''
@@ -190,26 +190,26 @@ function stopDragging() {
   document.removeEventListener('mouseup', stopDragging)
 }
 
-let $renameInput: Ref<HTMLInputElement[]> = ref([])
-let renameTabId: Ref<symbol | null> = ref(null)
+const $renameInput: Ref<HTMLInputElement[]> = ref([])
+const renameTabId: Ref<symbol | null> = ref(null)
 
 function isRenaming(id: symbol) {
   return props.renameable && id == renameTabId.value
 }
 
 function getTabContentWidth(id: symbol) {
-  let tabButtons = $tabHeader.value?.children
+  const tabButtons = $tabHeader.value?.children
   if (!tabButtons) return
   const tab = tabs.get(id)
   if (!tab) return
 
-  let tabButton = tabButtons[tab.order] as HTMLElement
-  let width = tabButton.getBoundingClientRect().width
-  let style = getComputedStyle(tabButton)
-  let padding = parseFloat(style.getPropertyValue('padding-left'))
-  let flexGap = parseFloat(style.getPropertyValue('gap'))
+  const tabButton = tabButtons[tab.order] as HTMLElement
+  const width = tabButton.getBoundingClientRect().width
+  const style = getComputedStyle(tabButton)
+  const padding = parseFloat(style.getPropertyValue('padding-left'))
+  const flexGap = parseFloat(style.getPropertyValue('gap'))
 
-  let icon = tabButton.children.item(0)
+  const icon = tabButton.children.item(0)
   let iconOffset = 0
   if (icon && icon?.tagName.toLowerCase() == 'i') {
     iconOffset = icon.getBoundingClientRect().width
@@ -221,11 +221,11 @@ function getTabContentWidth(id: symbol) {
 
 function startRenaming(id: symbol) {
   if (!props.renameable) return
-  let inputWidth = getTabContentWidth(id)
+  const inputWidth = getTabContentWidth(id)
   renameTabId.value = id
   nextTick(() => {
     if (!$renameInput.value || $renameInput.value.length == 0) return
-    let $input = $renameInput.value[0]
+    const $input = $renameInput.value[0]
     $input.style.width = `${inputWidth}px`
     $input.setSelectionRange(0, $input.value.length)
     $input.focus()
@@ -234,7 +234,7 @@ function startRenaming(id: symbol) {
 
 function finishRenaming() {
   if (!renameTabId.value) return
-  let newTitle = $renameInput.value[0].value || ''
+  const newTitle = $renameInput.value[0].value || ''
   emit('tabRenamed', renameTabId.value, newTitle)
   tabs.get(renameTabId.value)!.title = newTitle
   renameTabId.value = null
@@ -260,17 +260,17 @@ function cancelRenaming() {
         @mousedown="startDragging(tab.id, $event)"
         @dblclick="startRenaming(tab.id)"
       >
-        <i v-if="tab.icon" class="codicon" :class="`codicon-${tab.icon}`"></i>
+        <i v-if="tab.icon" class="codicon" :class="`codicon-${tab.icon}`" />
         <template v-if="isRenaming(tab.id)">
           <input
             ref="$renameInput"
             type="text"
             :value="tab.title"
+            spellcheck="false"
+            autocomplete="off"
             @keydown.enter="finishRenaming"
             @keydown.escape="cancelRenaming"
             @blur="cancelRenaming"
-            spellcheck="false"
-            autocomplete="off"
           />
         </template>
         <template v-else>
@@ -279,25 +279,25 @@ function cancelRenaming() {
             v-if="props.closable"
             class="codicon codicon-close"
             @mousedown.stop="closeTab(tab.id)"
-          ></i>
+          />
         </template>
       </button>
 
-      <button ref="$draggingButton" v-show="isDragging" class="tab-button dragging">
-        <i v-if="draggingTab?.icon" class="codicon" :class="`codicon-${draggingTab?.icon}`"></i>
+      <button v-show="isDragging" ref="$draggingButton" class="tab-button dragging">
+        <i v-if="draggingTab?.icon" class="codicon" :class="`codicon-${draggingTab?.icon}`" />
         <span>{{ draggingTab?.title }}</span>
-        <i v-if="props.closable" class="codicon codicon-close"></i>
+        <i v-if="props.closable" class="codicon codicon-close" />
       </button>
 
       <button v-if="props.newTabButton" class="tab-button" @click="emit('newTabClicked')">+</button>
 
-      <slot name="buttons"></slot>
-      <div class="spacer"></div>
-      <slot name="buttons-right"></slot>
+      <slot name="buttons" />
+      <div class="spacer" />
+      <slot name="buttons-right" />
     </div>
 
     <div class="tabs-content">
-      <slot></slot>
+      <slot />
     </div>
   </div>
 </template>

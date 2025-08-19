@@ -15,7 +15,7 @@ const language: monaco.languages.IMonarchLanguage = {
     registersAMD64,
     registersARM,
     registersARM64,
-    registersPPC64,
+    registersPPC64
   ),
   tokenizer: {
     root: [

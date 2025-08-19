@@ -34,8 +34,8 @@ export class SourceMap {
     this.assembly = { code: '', addresses: [] }
     this.map = new Map()
     this.reverseMap = new Map()
-    this.sourceDecorations = new Array()
-    this.assemblyDecorations = new Array()
+    this.sourceDecorations = []
+    this.assemblyDecorations = []
   }
 
   init() {
@@ -164,9 +164,9 @@ export class SourceMap {
         const [line, column] = [he.location.l, he.location.c]
         let message: string
         const columnStart = column
-        const columnEnd = (he.name) ? column + he.name.length : column + 1
+        const columnEnd = he.name ? column + he.name.length : column + 1
         if (he.name) {
-          message = `\`${he.name}\` escapes to heap` 
+          message = `\`${he.name}\` escapes to heap`
         } else {
           message = he.message!
         }

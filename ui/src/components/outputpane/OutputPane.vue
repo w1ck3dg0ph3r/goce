@@ -25,14 +25,14 @@ const tabIds = {
   <div class="output-pane">
     <GoceTabs class="tabs">
       <GoceTab
+        id="build-output"
         title="Build Output"
         icon="server-process"
         :order="0"
-        id="build-output"
         :tab-id="tabIds.buildOutput"
         class="tab"
       >
-        <BuildOutput :value="props.buildOutput" @jumpToSource="jumpToSource"></BuildOutput>
+        <BuildOutput :value="props.buildOutput" @jump-to-source="jumpToSource" />
       </GoceTab>
     </GoceTabs>
   </div>

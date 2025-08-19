@@ -2,7 +2,7 @@
 
 <template>
   <div class="loading-indicator">
-    <i class="loading-icon codicon codicon-sync"></i>
+    <i class="loading-icon codicon codicon-sync" />
   </div>
 </template>
 

@@ -16,7 +16,7 @@ build: build-ui build-api
 build-ui:
 	@cd ui &&\
 	pnpm install &&\
-	pnpm vite build --mode=localhost
+	pnpm build --mode=localhost
 
 build-api:
 	go build -ldflags $(GO_LDFLAGS) ./cmd/goce
