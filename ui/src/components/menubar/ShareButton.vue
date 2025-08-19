@@ -42,8 +42,8 @@ async function shareCode() {
 
 <template>
   <GoceButton @click="shareCode">
-    <i class="codicon codicon-cloud-upload"></i>
-    <span v-text="shareButtonText"></span>
+    <i class="codicon codicon-cloud-upload" />
+    <span v-text="shareButtonText" />
     <input
       v-show="State.sharedCodeLink"
       ref="$sharedLink"
@@ -51,9 +51,9 @@ async function shareCode() {
       type="text"
       readonly
       spellcheck="false"
-      @click.stop
       :value="State.sharedCodeLink"
       :style="{ width: `${inputWidth}px` }"
+      @click.stop
     />
   </GoceButton>
 </template>

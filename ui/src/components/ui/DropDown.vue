@@ -12,7 +12,7 @@ const emit = defineEmits<{
 
 const $button = ref<HTMLElement | null>(null)
 const $menu = ref<HTMLElement | null>(null)
-let menuVisible = ref(false)
+const menuVisible = ref(false)
 
 const selectedText = computed(() => {
   return props.options[props.modelValue] || ''
@@ -33,7 +33,8 @@ onUnmounted(() => {
 })
 
 function toggleMenu() {
-  menuVisible.value ? closeMenu() : openMenu()
+  if (menuVisible.value) closeMenu()
+  else openMenu()
 }
 
 function openMenu() {
@@ -54,20 +55,20 @@ function selectOption(index: number) {
   <div
     class="dropdown"
     :class="{ open: menuVisible }"
+    tabindex="0"
     @click="toggleMenu"
     @blur="closeMenu"
-    tabindex="0"
   >
     <div ref="$button" class="button">
-      <div class="value" v-text="selectedText"></div>
-      <i class="codicon" :class="menuVisible ? 'codicon-triangle-up' : 'codicon-triangle-down'"></i>
+      <div class="value" v-text="selectedText" />
+      <i class="codicon" :class="menuVisible ? 'codicon-triangle-up' : 'codicon-triangle-down'" />
     </div>
-    <div ref="$menu" class="menu" v-show="menuVisible">
+    <div v-show="menuVisible" ref="$menu" class="menu">
       <div
-        class="option"
-        :class="{ active: i == props.modelValue }"
         v-for="(text, i) of options"
         :key="i"
+        class="option"
+        :class="{ active: i == props.modelValue }"
         @click.stop="selectOption(i)"
       >
         {{ text }}

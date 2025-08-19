@@ -8,7 +8,9 @@
     font-family: 'Roboto', sans-serif;
     font-weight: 400;
   } @else if $purpose == code {
-    font-family: 'SF Mono', 'Monaco', 'Menlo', 'Consolas', 'Ubuntu Mono', 'Liberation Mono', 'DejaVu Sans Mono', 'Courier New', monospace;
+    font-family:
+      'SF Mono', 'Monaco', 'Menlo', 'Consolas', 'Ubuntu Mono', 'Liberation Mono',
+      'DejaVu Sans Mono', 'Courier New', monospace;
   } @else {
     font-family: 'Roboto', sans-serif;
   }

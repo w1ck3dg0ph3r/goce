@@ -12,7 +12,7 @@ class State {
     localStorage.setItem('theme', v)
   }
 
-  compilers: Array<CompilerInfo> = new Array()
+  compilers: Array<CompilerInfo> = []
   compilerByName: Map<string, CompilerInfo> = new Map()
   get defaultCompiler(): CompilerInfo | undefined {
     return this.compilers.length ? this.compilers[0] : undefined

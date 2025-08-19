@@ -24,7 +24,7 @@ const $editor = ref<InstanceType<typeof MonacoEditor> | null>(null)
 let lineHasSource: monaco.editor.IContextKey<boolean>
 
 onMounted(() => {
-  let editor = $editor.value!.getEditor()
+  const editor = $editor.value!.getEditor()
   lineHasSource = editor.createContextKey('lineHasSource', false)
 
   editor.addAction({
@@ -34,7 +34,7 @@ onMounted(() => {
     precondition: 'lineHasSource',
     keybindings: [monaco.KeyCode.F4],
     run() {
-      let assemblyLine = editor?.getPosition()?.lineNumber
+      const assemblyLine = editor?.getPosition()?.lineNumber
       if (assemblyLine) {
         emit('revealSource', assemblyLine)
         emit('lineHovered', assemblyLine)
@@ -48,7 +48,7 @@ onMounted(() => {
 })
 
 function revealLine(lineNumber: number) {
-  let editor = $editor.value?.getEditor()
+  const editor = $editor.value?.getEditor()
   editor?.revealLine(lineNumber)
   editor?.setPosition({ lineNumber: lineNumber, column: 1 })
   editor?.trigger('unfold', 'editor.unfold', {})
@@ -60,7 +60,7 @@ function lineHovered(lineNumber: number) {
 
 const lineNumbersMinChars = computed(() => {
   let min = 0
-  for (let a of props.sourceMap.assembly.addresses) {
+  for (const a of props.sourceMap.assembly.addresses) {
     if (a.length > min) min = a.length
   }
   return min
@@ -83,8 +83,8 @@ function lineAddress(lineNumber: number): string {
       lineNumbers: lineAddress,
       lineNumbersMinChars: lineNumbersMinChars,
     }"
-    @hover="lineHovered"
     :decorations="props.sourceMap.assemblyDecorations"
     :highlights="props.sourceMap.highlightedAssembly"
-  ></MonacoEditor>
+    @hover="lineHovered"
+  />
 </template>

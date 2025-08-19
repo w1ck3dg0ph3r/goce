@@ -99,7 +99,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   resobs?.disconnect()
-  for (let stop of unsubscribeHandlers) stop()
+  for (const stop of unsubscribeHandlers) stop()
   unsubscribeHandlers.splice(0)
   editor.dispose()
 })
@@ -158,7 +158,7 @@ function getEditor(): monaco.editor.IStandaloneCodeEditor {
 
 <template>
   <div class="code-editor">
-    <div ref="$editor"></div>
+    <div ref="$editor" />
   </div>
 </template>
 

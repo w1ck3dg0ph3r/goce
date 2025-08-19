@@ -15,23 +15,23 @@ function switchTheme() {
 <template>
   <div id="menu">
     <a href="/">
-      <GoceLogo class="logo"></GoceLogo>
+      <GoceLogo class="logo" />
     </a>
 
     <GoceButton @click="switchTheme">
       <i
         class="codicon codicon-color-mode"
         :style="{ transform: State.theme == 'dark' ? `rotate(180deg)` : undefined }"
-      ></i>
+      />
     </GoceButton>
 
-    <ShareButton></ShareButton>
+    <ShareButton />
 
-    <div class="spacer"></div>
+    <div class="spacer" />
 
     <a href="https://github.com/w1ck3dg0ph3r/goce" target="_blank">
       <GoceButton style="height: 100%">
-        <i class="codicon codicon-github"></i>
+        <i class="codicon codicon-github" />
         Source
       </GoceButton>
     </a>

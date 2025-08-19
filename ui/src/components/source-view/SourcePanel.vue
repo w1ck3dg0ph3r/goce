@@ -33,7 +33,7 @@ onMounted(() => {
   if (!settings.compiler) {
     return
   }
-  for (let [i, c] of State.compilers.entries()) {
+  for (const [i, c] of State.compilers.entries()) {
     if (c.name == settings.compiler?.name) {
       selectedCompilerIndex.value = i
       break
@@ -55,7 +55,7 @@ interface ArchitectureLevels {
 }
 
 const availableLevels = computed(() => {
-  let levels: ArchitectureLevels = {
+  const levels: ArchitectureLevels = {
     names: [],
     values: [],
     default: 0,
@@ -63,7 +63,7 @@ const availableLevels = computed(() => {
   if (!settings.compiler) {
     return levels
   }
-  let c = State.compilers[selectedCompilerIndex.value]
+  const c = State.compilers[selectedCompilerIndex.value]
   switch (c.architecture) {
     case 'amd64':
       levels.names = ['x86-64-v1', 'x86-64-v2', 'x86-64-v3', 'x86-64-v4']
@@ -121,55 +121,60 @@ function updateSettings() {
         <label>Compiler:</label>
         <DropDown
           class="control dropdown"
-          :modelValue="selectedCompilerIndex"
-          @update:modelValue="selectCompiler"
+          :model-value="selectedCompilerIndex"
           :options="compilerNames"
-        ></DropDown>
+          @update:model-value="selectCompiler"
+        />
       </div>
 
-      <div class="labeled-item" v-if="availableLevels.values.length > 0">
+      <div v-if="availableLevels.values.length > 0" class="labeled-item">
         <label>Architecture level:</label>
         <DropDown
           class="control"
           style="width: 8rem"
-          :modelValue="selectedArchitectureLevel"
-          @update:modelValue="selectArchitectureLevel"
+          :model-value="selectedArchitectureLevel"
           :options="availableLevels.names"
-        ></DropDown>
+          @update:model-value="selectArchitectureLevel"
+        />
       </div>
 
       <div class="item">
         <GoceCheckbox
-          class="control"
           v-model="optimizations"
-          @update:modelValue="updateCompilerOptions"
-          >Optimizations</GoceCheckbox
+          class="control"
+          @update:model-value="updateCompilerOptions"
         >
+          Optimizations
+        </GoceCheckbox>
       </div>
 
       <div class="item">
-        <GoceCheckbox class="control" v-model="inlining" @update:modelValue="updateCompilerOptions"
-          >Inlining</GoceCheckbox
+        <GoceCheckbox
+          v-model="inlining"
+          class="control"
+          @update:model-value="updateCompilerOptions"
         >
+          Inlining
+        </GoceCheckbox>
       </div>
 
-      <div class="spacer"></div>
+      <div class="spacer" />
 
       <div class="item">
         <GoceButton @click="emit('diff')">
-          <i class="codicon codicon-diff"></i>
+          <i class="codicon codicon-diff" />
           <span>Compare</span>
         </GoceButton>
       </div>
       <div class="item">
         <GoceButton @click="emit('format')">
-          <i class="codicon codicon-json"></i>
+          <i class="codicon codicon-json" />
           <span>Format</span>
         </GoceButton>
       </div>
       <div class="item">
         <GoceButton @click="emit('compile')">
-          <i class="codicon codicon-play"></i>
+          <i class="codicon codicon-play" />
           <span>Compile</span>
         </GoceButton>
       </div>
