@@ -1,22 +1,42 @@
+version: "2"
 linters:
   enable:
-    - gosec
     - bodyclose
     - err113
     - exhaustive
-    - gofumpt
-    - gci
+    - gosec
     - nilnil
     - wastedassign
-
-linters-settings:
-  gci:
-    sections:
-      - standard # Standard section: captures all standard packages.
-      - default # Default section: contains all imports that could not be matched to another section type.
-      - localmodule # Local module section: contains all local packages. This section is not present unless explicitly enabled.
-      - dot # Dot section: contains all dot imports. This section is not present unless explicitly enabled.
-  gosec:
-    excludes:
-      - G204 # Subprocess launched with a potential tainted input or cmd arguments
-      - G115 # Potential integer overflow when converting between integer types
+  settings:
+    gosec:
+      excludes:
+        - G204 # Subprocess launched with a potential tainted input or cmd arguments
+        - G115 # Potential integer overflow when converting between integer types
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gci
+    - gofumpt
+  settings:
+    gci:
+      sections:
+        - standard # Standard section: captures all standard packages.
+        - default # Default section: contains all imports that could not be matched to another section type.
+        - localmodule # Local module section: contains all local packages. This section is not present unless explicitly enabled.
+        - dot # Dot section: contains all dot imports. This section is not present unless explicitly enabled.
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

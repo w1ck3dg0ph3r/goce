@@ -1,10 +1,10 @@
 VERSION=$(shell git describe --tags 2>/dev/null || git rev-parse --short=7 HEAD 2>/dev/null || echo -n unknown)
-DOCKER_IMAGE=w1ck3dg0ph3r/goce
+DOCKER_IMAGE=docker.io/w1ck3dg0ph3r/goce
 DOCKER_TAG=$(DOCKER_IMAGE):latest
 
 GO_LDFLAGS="-X main.version=$(VERSION)"
 
-GOLANGCILINT_VERSION=v1.61.0
+GOLANGCILINT_VERSION=v2.4.0
 
 default: build
 
@@ -42,13 +42,13 @@ lint-ui:
 	pnpm lint
 
 image:
-	docker build \
+	podman build \
 		--build-arg version=$(VERSION) \
 		--build-arg ui_mode=localhost \
 		-t $(DOCKER_TAG) .
 
 image-production:
-	docker build \
+	podman build \
 		--build-arg version=$(VERSION) \
 		--build-arg ui_mode=production \
 		-t $(DOCKER_TAG) .
