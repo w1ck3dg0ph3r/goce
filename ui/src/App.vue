@@ -205,6 +205,7 @@ package main
 import (
 	"fmt"
 	"math"
+	"os"
 
 	"github.com/shopspring/decimal"
 )
@@ -231,7 +232,10 @@ func main() {
 	fmt.Println(res)
 	fmt.Println(sqrt(float32(res)))
 	fmt.Println(square(res))
+	os.Exit(s[42])
 }
+
+var s = make([]int, 100)
 `
 
 function tabIcon(tab: Tab): string | undefined {
