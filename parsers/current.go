@@ -58,25 +58,33 @@ func parseBuildOutput(res *Result, sourceCode []byte, output io.Reader) {
 
 		// Can Inline
 		if match = reCanInline.FindSubmatch(text); match != nil {
+			name := string(match[reCanInline_Name])
 			fc := InliningAnalysis{
-				Name:      string(match[reCanInline_Name]),
-				Location:  locationToUnicode(sourceLines, location),
+				Diagnostic: Diagnostic{
+					Type:  DiagnosticInliningAnalysis,
+					Range: makeRange(locationToUnicode(sourceLines, location), len(name)),
+				},
+				Name:      name,
 				CanInline: true,
 			}
 			cost, _ := strconv.Atoi(string(match[reCanInline_Cost]))
 			fc.Cost = cost
-			res.InliningAnalysis = append(res.InliningAnalysis, fc)
+			res.Diagnostics = append(res.Diagnostics, fc)
 		}
 
 		// Cannot Inline
 		if match = reCannotInline.FindSubmatch(text); match != nil {
+			name := string(match[reCannotInline_Name])
 			fc := InliningAnalysis{
+				Diagnostic: Diagnostic{
+					Type:  DiagnosticInliningAnalysis,
+					Range: makeRange(locationToUnicode(sourceLines, location), len(name)),
+				},
 				Name:      string(match[reCannotInline_Name]),
-				Location:  locationToUnicode(sourceLines, location),
 				CanInline: false,
 				Reason:    string(match[reCannotInline_Reason]),
 			}
-			res.InliningAnalysis = append(res.InliningAnalysis, fc)
+			res.Diagnostics = append(res.Diagnostics, fc)
 		}
 
 		// Inlining Call
@@ -92,17 +100,19 @@ func parseBuildOutput(res *Result, sourceCode []byte, output io.Reader) {
 				col -= nameLen
 			}
 			ic := InlinedCall{
+				Diagnostic: Diagnostic{
+					Type: DiagnosticInlinedCall,
+					Range: makeRange(locationToUnicode(
+						sourceLines,
+						Location{
+							Line:   location.Line,
+							Column: col,
+						},
+					), nameLen),
+				},
 				Name: string(name),
-				Location: locationToUnicode(
-					sourceLines,
-					Location{
-						Line:   location.Line,
-						Column: col,
-					},
-				),
-				Length: nameLen,
 			}
-			res.InlinedCalls = append(res.InlinedCalls, ic)
+			res.Diagnostics = append(res.Diagnostics, ic)
 		}
 
 		// Heap escapes
@@ -111,24 +121,31 @@ func parseBuildOutput(res *Result, sourceCode []byte, output io.Reader) {
 			name := match[reEscapesToHeap_Name]
 			if !bytes.HasSuffix(text, []byte(":")) {
 				he := HeapEscape{
-					Location: locationToUnicode(sourceLines, location),
+					Diagnostic: Diagnostic{
+						Type:  DiagnosticHeapEscape,
+						Range: makeRange(locationToUnicode(sourceLines, location), 0),
+					},
 				}
 				if bytes.HasPrefix(line[location.Column-1:], name) {
 					he.Name = string(match[reEscapesToHeap_Name])
+					he.Range.End.Column += len(he.Name)
 				} else {
 					he.Message = string(text)
 				}
-				res.HeapEscapes = append(res.HeapEscapes, he)
+				res.Diagnostics = append(res.Diagnostics, he)
 			}
 
 			// Go versions prior to 1.20 seem to report column-1 for heap escapes
 			if bytes.HasPrefix(line[location.Column:], name) {
 				location.Column += 1
 				he := HeapEscape{
-					Name:     string(match[reEscapesToHeap_Name]),
-					Location: locationToUnicode(sourceLines, location),
+					Diagnostic: Diagnostic{
+						Type:  DiagnosticHeapEscape,
+						Range: makeRange(locationToUnicode(sourceLines, location), 0),
+					},
+					Name: string(match[reEscapesToHeap_Name]),
 				}
-				res.HeapEscapes = append(res.HeapEscapes, he)
+				res.Diagnostics = append(res.Diagnostics, he)
 			}
 		}
 	}
@@ -205,6 +222,12 @@ func suffixWordLength(s []byte) int {
 		}
 	}
 	return blen
+}
+
+func makeRange(start Location, length int) Range {
+	end := start
+	end.Column += length
+	return Range{Start: start, End: end}
 }
 
 // locationToUnicode tranforms loc's Column to runes instead of bytes.

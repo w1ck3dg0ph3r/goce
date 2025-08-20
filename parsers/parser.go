@@ -13,11 +13,9 @@ type Parser interface {
 }
 
 type Result struct {
-	Assembly         string             `json:"assembly"`
-	Mapping          []Mapping          `json:"mapping"`
-	InliningAnalysis []InliningAnalysis `json:"inliningAnalysis"`
-	InlinedCalls     []InlinedCall      `json:"inlinedCalls"`
-	HeapEscapes      []HeapEscape       `json:"heapEscapes"`
+	Assembly    string        `json:"assembly"`
+	Mapping     []Mapping     `json:"mapping"`
+	Diagnostics []IDiagnostic `json:"diagnostics"`
 }
 
 type Mapping struct {
@@ -26,29 +24,50 @@ type Mapping struct {
 	AssemblyEnd   int `json:"end"`
 }
 
-type InliningAnalysis struct {
-	Name      string   `json:"name"`
-	Location  Location `json:"location"`
-	CanInline bool     `json:"canInline"`
-	Reason    string   `json:"reason"`
-	Cost      int      `json:"cost"`
+// Can be one of:
+// [InliningAnalysis], [InlinedCall], [HeapEscape]
+type IDiagnostic any
+
+type Diagnostic struct {
+	Type  DiagnosticType `json:"type"`
+	Range Range          `json:"range"`
 }
 
-type InlinedCall struct {
-	Name     string   `json:"name"`
-	Location Location `json:"location"`
-	Length   int      `json:"length"`
-}
+type DiagnosticType string
 
-type HeapEscape struct {
-	Name     string   `json:"name,omitempty"`
-	Location Location `json:"location"`
-	Message  string   `json:"message,omitempty"`
+const (
+	DiagnosticInliningAnalysis DiagnosticType = "inliningAnalysis"
+	DiagnosticInlinedCall      DiagnosticType = "inlinedCall"
+	DiagnosticHeapEscape       DiagnosticType = "heapEscape"
+)
+
+type Range struct {
+	Start Location `json:"s"`
+	End   Location `json:"e"`
 }
 
 type Location struct {
 	Line   int `json:"l"`
 	Column int `json:"c"`
+}
+
+type InliningAnalysis struct {
+	Diagnostic
+	Name      string `json:"name"`
+	CanInline bool   `json:"canInline"`
+	Reason    string `json:"reason"`
+	Cost      int    `json:"cost"`
+}
+
+type InlinedCall struct {
+	Diagnostic
+	Name string `json:"name"`
+}
+
+type HeapEscape struct {
+	Diagnostic
+	Name    string `json:"name"`
+	Message string `json:"message"`
 }
 
 func FindMatching(output compilers.Result) Parser {

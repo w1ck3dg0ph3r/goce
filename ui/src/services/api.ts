@@ -104,23 +104,37 @@ export interface CompilationResult {
     start: number
     end: number
   }[]
-  inliningAnalysis?: {
-    name: string
-    location: FileLocation
-    canInline: boolean
-    reason: string
-    cost: number
-  }[]
-  inlinedCalls?: {
-    name: string
-    location: FileLocation
-    length: number
-  }[]
-  heapEscapes?: {
-    name?: string
-    location: FileLocation
-    message?: string
-  }[]
+  diagnostics?: Diagnostic[]
+}
+
+type Diagnostic = InliningAnalysis | InlinedCall | HeapEscape
+
+interface InliningAnalysis {
+  type: 'inliningAnalysis'
+  range: FileRange
+  name: string
+  canInline: boolean
+  reason: string
+  cost: number
+}
+
+interface InlinedCall {
+  type: 'inlinedCall'
+  range: FileRange
+  name: string
+  length: number
+}
+
+interface HeapEscape {
+  type: 'heapEscape'
+  range: FileRange
+  name?: string
+  message?: string
+}
+
+interface FileRange {
+  s: FileLocation
+  e: FileLocation
 }
 
 interface FileLocation {

@@ -123,60 +123,55 @@ export class SourceMap {
       })
     }
 
-    if (compiled.inliningAnalysis) {
-      for (const fc of compiled.inliningAnalysis) {
-        const [line, column] = [fc.location.l, fc.location.c]
-        const decoration = {
-          range: new monaco.Range(line, column, line, column + fc.name.length),
-          options: {
-            hoverMessage: [
-              { value: `\`${fc.name}\` ${fc.canInline ? 'can' : 'cannot'} be inlined` },
-            ],
-            inlineClassName: fc.canInline
-              ? 'inline-hover-can-inline'
-              : 'inline-hover-cannot-inline',
-          },
-        }
-        if (fc.canInline) {
-          decoration.options.hoverMessage.push({ value: `cost: ${fc.cost}` })
-        } else {
-          decoration.options.hoverMessage.push({ value: fc.reason })
-        }
-        decs.push(decoration)
-      }
-    }
+    if (compiled.diagnostics) {
+      for (const d of compiled.diagnostics) {
+        const range = new monaco.Range(d.range.s.l, d.range.s.c, d.range.e.l, d.range.e.c)
 
-    if (compiled.inlinedCalls) {
-      for (const ic of compiled.inlinedCalls) {
-        const [line, column] = [ic.location.l, ic.location.c]
-        decs.push({
-          range: new monaco.Range(line, column, line, column + ic.length),
-          options: {
-            hoverMessage: [{ value: `inlining call to \`${ic.name}\`` }],
-            className: 'inlinedcall',
-          },
-        })
-      }
-    }
+        switch (d.type) {
+          case 'inliningAnalysis': {
+            const decoration = {
+              range,
+              options: {
+                hoverMessage: [
+                  { value: `\`${d.name}\` ${d.canInline ? 'can' : 'cannot'} be inlined` },
+                ],
+                inlineClassName: d.canInline
+                  ? 'inline-hover-can-inline'
+                  : 'inline-hover-cannot-inline',
+              },
+            }
+            if (d.canInline) {
+              decoration.options.hoverMessage.push({ value: `cost: ${d.cost}` })
+            } else {
+              decoration.options.hoverMessage.push({ value: d.reason })
+            }
+            decs.push(decoration)
+            break
+          }
 
-    if (compiled.heapEscapes) {
-      for (const he of compiled.heapEscapes) {
-        const [line, column] = [he.location.l, he.location.c]
-        let message: string
-        const columnStart = column
-        const columnEnd = he.name ? column + he.name.length : column + 1
-        if (he.name) {
-          message = `\`${he.name}\` escapes to heap`
-        } else {
-          message = he.message!
+          case 'inlinedCall': {
+            decs.push({
+              range,
+              options: {
+                hoverMessage: [{ value: `inlining call to \`${d.name}\`` }],
+                className: 'inlinedcall',
+              },
+            })
+            break
+          }
+
+          case 'heapEscape': {
+            const message = d.name ? `\`${d.name}\` escapes to heap` : d.message!
+            decs.push({
+              range,
+              options: {
+                hoverMessage: { value: message },
+                inlineClassName: 'inline-hover-escape',
+              },
+            })
+            break
+          }
         }
-        decs.push({
-          range: new monaco.Range(line, columnStart, line, columnEnd),
-          options: {
-            hoverMessage: { value: message },
-            inlineClassName: 'inline-hover-escape',
-          },
-        })
       }
     }
 
