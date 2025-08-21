@@ -18,7 +18,7 @@ type currentParser struct{}
 func (currentParser) Parse(output compilers.Result) Result {
 	var res Result
 	parseBuildOutput(&res, output.SourceCode, bytes.NewReader(output.BuildOutput))
-	parseObjdumpOutput(&res, bytes.NewReader(output.ObjdumpOutput))
+	// parseObjdumpOutput(&res, bytes.NewReader(output.ObjdumpOutput))
 	return res
 }
 
@@ -27,6 +27,11 @@ func parseBuildOutput(res *Result, sourceCode []byte, output io.Reader) {
 
 	mainFilenameBytes := []byte("./main.go")
 	sourceLines := bytes.Split(sourceCode, []byte{'\n'})
+
+	buildOutput := &strings.Builder{}
+	assembly := strings.Builder{}
+	lastSourceLine := 0
+	assemblyLine := 0
 
 	for sc.Scan() {
 		if err := sc.Err(); err != nil {
@@ -40,142 +45,14 @@ func parseBuildOutput(res *Result, sourceCode []byte, output io.Reader) {
 
 		var match [][]byte
 
-		if match = reBuildLine.FindSubmatch(line); match == nil {
+		if bytes.Contains(line, []byte(" STEXT ")) {
 			continue
-		}
-		fileName := match[reBuildLine_FileName]
-		location := Location{
-			Line:   mustParseInt(match[reBuildLine_Line]),
-			Column: mustParseInt(match[reBuildLine_Column]),
-		}
-		text := match[reBuildLine_Text]
-		if !bytes.Equal(fileName, mainFilenameBytes) {
-			continue
-		}
-		if indentLevel(text) > 0 {
-			continue
-		}
-
-		// Can Inline
-		if match = reCanInline.FindSubmatch(text); match != nil {
-			name := string(match[reCanInline_Name])
-			fc := InliningAnalysis{
-				Diagnostic: Diagnostic{
-					Type:  DiagnosticInliningAnalysis,
-					Range: makeRange(locationToUnicode(sourceLines, location), len(name)),
-				},
-				Name:      name,
-				CanInline: true,
-			}
-			cost, _ := strconv.Atoi(string(match[reCanInline_Cost]))
-			fc.Cost = cost
-			res.Diagnostics = append(res.Diagnostics, fc)
-		}
-
-		// Cannot Inline
-		if match = reCannotInline.FindSubmatch(text); match != nil {
-			name := string(match[reCannotInline_Name])
-			fc := InliningAnalysis{
-				Diagnostic: Diagnostic{
-					Type:  DiagnosticInliningAnalysis,
-					Range: makeRange(locationToUnicode(sourceLines, location), len(name)),
-				},
-				Name:      string(match[reCannotInline_Name]),
-				CanInline: false,
-				Reason:    string(match[reCannotInline_Reason]),
-			}
-			res.Diagnostics = append(res.Diagnostics, fc)
-		}
-
-		// Inlining Call
-		if match = reInliningCall.FindSubmatch(text); match != nil {
-			col := location.Column
-			line := sourceLines[location.Line-1]
-			name := match[reInliningCall_Name]
-			nameLen := len(name)
-			if bytes.HasSuffix(line[:col-1], name) {
-				col -= nameLen
-			} else {
-				nameLen = suffixWordLength(line[:col-1])
-				col -= nameLen
-			}
-			ic := InlinedCall{
-				Diagnostic: Diagnostic{
-					Type: DiagnosticInlinedCall,
-					Range: makeRange(locationToUnicode(
-						sourceLines,
-						Location{
-							Line:   location.Line,
-							Column: col,
-						},
-					), nameLen),
-				},
-				Name: string(name),
-			}
-			res.Diagnostics = append(res.Diagnostics, ic)
-		}
-
-		// Heap escapes
-		if match = reEscapesToHeap.FindSubmatch(text); match != nil {
-			line := sourceLines[location.Line-1]
-			name := match[reEscapesToHeap_Name]
-			if !bytes.HasSuffix(text, []byte(":")) {
-				he := HeapEscape{
-					Diagnostic: Diagnostic{
-						Type:  DiagnosticHeapEscape,
-						Range: makeRange(locationToUnicode(sourceLines, location), 0),
-					},
-				}
-				if bytes.HasPrefix(line[location.Column-1:], name) {
-					he.Name = string(match[reEscapesToHeap_Name])
-					he.Range.End.Column += len(he.Name)
-				} else {
-					he.Message = string(text)
-				}
-				res.Diagnostics = append(res.Diagnostics, he)
-			}
-
-			// Go versions prior to 1.20 seem to report column-1 for heap escapes
-			if bytes.HasPrefix(line[location.Column:], name) {
-				location.Column += 1
-				he := HeapEscape{
-					Diagnostic: Diagnostic{
-						Type:  DiagnosticHeapEscape,
-						Range: makeRange(locationToUnicode(sourceLines, location), 0),
-					},
-					Name: string(match[reEscapesToHeap_Name]),
-				}
-				res.Diagnostics = append(res.Diagnostics, he)
-			}
-		}
-	}
-}
-
-func parseObjdumpOutput(res *Result, output io.Reader) {
-	sc := bufio.NewScanner(output)
-
-	assembly := strings.Builder{}
-	mainFilenameBytes := []byte("main.go")
-	lastSourceLine := 0
-	assemblyLine := 0
-
-	for sc.Scan() {
-		if err := sc.Err(); err != nil {
-			break
-		}
-
-		line := sc.Bytes()
-		var match [][]byte
-
-		if bytes.HasPrefix(line, []byte("TEXT")) {
-			assembly.Write([]byte(sc.Text()))
-			assembly.WriteRune('\n')
-			assemblyLine++
 		}
 
 		if match = reAssembly.FindSubmatch(line); match != nil {
 			assembly.Write(match[reAssembly_Address])
 			assembly.WriteRune('\t')
+			bytesReplace(match[reAssembly_Code], '\t', ' ')
 			assembly.Write(match[reAssembly_Code])
 			assembly.WriteRune('\n')
 			assemblyLine++
@@ -193,10 +70,126 @@ func parseObjdumpOutput(res *Result, output io.Reader) {
 				}
 				lastSourceLine = lineNumber
 			}
+			continue
+		}
+
+		if match = reBuildLine.FindSubmatch(line); match != nil {
+			buildOutput.Write(line)
+			buildOutput.WriteByte('\n')
+			fileName := match[reBuildLine_FileName]
+			location := Location{
+				Line:   mustParseInt(match[reBuildLine_Line]),
+				Column: mustParseInt(match[reBuildLine_Column]),
+			}
+			text := match[reBuildLine_Text]
+			if !bytes.Equal(fileName, mainFilenameBytes) {
+				continue
+			}
+			if indentLevel(text) > 0 {
+				continue
+			}
+
+			// Can Inline
+			if match = reCanInline.FindSubmatch(text); match != nil {
+				name := string(match[reCanInline_Name])
+				fc := InliningAnalysis{
+					Diagnostic: Diagnostic{
+						Type:  DiagnosticInliningAnalysis,
+						Range: makeRange(locationToUnicode(sourceLines, location), len(name)),
+					},
+					Name:      name,
+					CanInline: true,
+				}
+				cost, _ := strconv.Atoi(string(match[reCanInline_Cost]))
+				fc.Cost = cost
+				res.Diagnostics = append(res.Diagnostics, fc)
+			}
+
+			// Cannot Inline
+			if match = reCannotInline.FindSubmatch(text); match != nil {
+				name := string(match[reCannotInline_Name])
+				fc := InliningAnalysis{
+					Diagnostic: Diagnostic{
+						Type:  DiagnosticInliningAnalysis,
+						Range: makeRange(locationToUnicode(sourceLines, location), len(name)),
+					},
+					Name:      string(match[reCannotInline_Name]),
+					CanInline: false,
+					Reason:    string(match[reCannotInline_Reason]),
+				}
+				res.Diagnostics = append(res.Diagnostics, fc)
+			}
+
+			// Inlining Call
+			if match = reInliningCall.FindSubmatch(text); match != nil {
+				col := location.Column
+				line := sourceLines[location.Line-1]
+				name := match[reInliningCall_Name]
+				nameLen := len(name)
+				if bytes.HasSuffix(line[:col-1], name) {
+					col -= nameLen
+				} else {
+					nameLen = suffixWordLength(line[:col-1])
+					col -= nameLen
+				}
+				ic := InlinedCall{
+					Diagnostic: Diagnostic{
+						Type: DiagnosticInlinedCall,
+						Range: makeRange(locationToUnicode(
+							sourceLines,
+							Location{
+								Line:   location.Line,
+								Column: col,
+							},
+						), nameLen),
+					},
+					Name: string(name),
+				}
+				res.Diagnostics = append(res.Diagnostics, ic)
+			}
+
+			// Heap escapes
+			if match = reEscapesToHeap.FindSubmatch(text); match != nil {
+				line := sourceLines[location.Line-1]
+				name := match[reEscapesToHeap_Name]
+
+				he := HeapEscape{
+					Diagnostic: Diagnostic{
+						Type:  DiagnosticHeapEscape,
+						Range: makeRange(locationToUnicode(sourceLines, location), 1),
+					},
+				}
+				if bytes.HasPrefix(line[location.Column-1:], name) {
+					he.Name = string(match[reEscapesToHeap_Name])
+					he.Range.End.Column = he.Range.Start.Column + len(he.Name)
+				} else if pos := bytes.Index(line, match[reEscapesToHeap_Name]); pos != -1 {
+					he.Name = string(match[reEscapesToHeap_Name])
+					he.Range.Start.Column = pos + 1
+					he.Range.End.Column = he.Range.Start.Column + len(he.Name)
+				} else {
+					he.Message = string(text)
+				}
+				res.Diagnostics = append(res.Diagnostics, he)
+
+				// Go versions prior to 1.20 seem to report column-1 for heap escapes
+				if bytes.HasPrefix(line[location.Column:], name) {
+					location.Column += 1
+					he := HeapEscape{
+						Diagnostic: Diagnostic{
+							Type:  DiagnosticHeapEscape,
+							Range: makeRange(locationToUnicode(sourceLines, location), 0),
+						},
+						Name: string(match[reEscapesToHeap_Name]),
+					}
+					res.Diagnostics = append(res.Diagnostics, he)
+				}
+			}
+
 		}
 	}
 
 	res.Assembly = assembly.String()
+	res.BuildOutput = buildOutput.String()
 }
 
 func isComment(line []byte) bool {
@@ -257,13 +250,20 @@ func mustParseInt(s []byte) int {
 	return i
 }
 
-var reAssembly = regexp.MustCompile(`^\s+(.+?):(\d+)\t+(\w+)\t+([^\t]+)\t+(.*?)\t*$`)
+func bytesReplace(bs []byte, old, new byte) {
+	for i, b := range bs {
+		if b == old {
+			bs[i] = new
+		}
+	}
+}
+
+var reAssembly = regexp.MustCompile(`^\t(\w+) \d+ \(([^:]+):(\d+)\)\t(.*)`)
 
 const (
-	reAssembly_File = iota + 1
+	reAssembly_Address = iota + 1
+	reAssembly_File
 	reAssembly_Line
-	reAssembly_Address
-	reAssembly_Opcodes
 	reAssembly_Code
 )
 
@@ -296,7 +296,7 @@ const (
 	reInliningCall_Name = iota + 1
 )
 
-var reEscapesToHeap = regexp.MustCompile(`^([\w_&{}]+) escapes to heap$`)
+var reEscapesToHeap = regexp.MustCompile(`^(.+) escapes to heap:$`)
 
 const (
 	reEscapesToHeap_Name = iota + 1

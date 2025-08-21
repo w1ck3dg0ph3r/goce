@@ -18,7 +18,6 @@ type CompilationCacheKey struct {
 
 type CompilationCacheValue struct {
 	BuildFailed bool
-	BuildOutput string
 	parsers.Result
 }
 

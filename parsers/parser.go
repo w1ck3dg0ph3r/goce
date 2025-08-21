@@ -13,6 +13,7 @@ type Parser interface {
 }
 
 type Result struct {
+	BuildOutput string        `json:"buildOutput"`
 	Assembly    string        `json:"assembly"`
 	Mapping     []Mapping     `json:"mapping"`
 	Diagnostics []IDiagnostic `json:"diagnostics"`
