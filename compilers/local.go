@@ -42,14 +42,11 @@ func (c *localCompiler) Compile(ctx context.Context, config CompilerConfig, code
 
 	res := Result{
 		CompilerInfo:   info,
-		SourceFilename: run.mainBasename,
+		SourceFilename: run.mainFilename,
 		SourceCode:     code,
 	}
 	if res.BuildOutput, err = run.Build(ctx); err != nil {
 		return res, fmt.Errorf("build: %w", err)
-	}
-	if res.ObjdumpOutput, err = run.Objdump(ctx); err != nil {
-		return res, fmt.Errorf("objdump: %w", err)
 	}
 
 	return res, nil
@@ -87,7 +84,7 @@ type localRun struct {
 
 	buildDir     string
 	buildEnv     []string
-	mainBasename string
+	mainFilename string
 }
 
 func (r *localRun) Prepare() error {
@@ -101,9 +98,9 @@ func (r *localRun) Prepare() error {
 	}
 	r.buildDir = buildDir
 
-	r.mainBasename = "main.go"
-	mainFilename := filepath.Join(buildDir, r.mainBasename)
-	fmain, err := os.Create(mainFilename)
+	r.mainFilename = "main.go"
+	mainFilepath := filepath.Join(buildDir, r.mainFilename)
+	fmain, err := os.Create(mainFilepath)
 	if err != nil {
 		return fmt.Errorf("create source file: %w", err)
 	}
@@ -136,11 +133,7 @@ func (r *localRun) InitModules(ctx context.Context) error {
 }
 
 func (r *localRun) Build(ctx context.Context) ([]byte, error) {
-	if errors := r.buildErrors(ctx); errors != nil {
-		return errors, ErrBuildFailed
-	}
-
-	args := []string{"build", "-o", "main", "-trimpath", "-gcflags"}
+	args := []string{"build", "-o", os.DevNull, "-trimpath"}
 	var gcflags []string
 	if r.Config.Options.DisableInlining {
 		gcflags = append(gcflags, "-l")
@@ -149,39 +142,14 @@ func (r *localRun) Build(ctx context.Context) ([]byte, error) {
 		gcflags = append(gcflags, "-N")
 	}
 	gcflags = append(gcflags, "-m=2")
-	args = append(args, strings.Join(gcflags, " "))
-	args = append(args, r.mainBasename)
+	gcflags = append(gcflags, "-S")
+	args = append(args, "-gcflags", strings.Join(gcflags, " "))
+	args = append(args, r.mainFilename)
 	cmd := exec.CommandContext(ctx, r.GoPath, args...)
 	cmd.Dir = r.buildDir
 	cmd.Env = r.BuildEnv()
 	output, err := cmd.CombinedOutput()
-	output, _ = bytes.CutPrefix(output, []byte("# command-line-arguments\n"))
-	if err != nil {
-		return nil, err
-	}
-	return output, nil
-}
-
-func (r *localRun) Objdump(ctx context.Context) ([]byte, error) {
-	cmd := exec.CommandContext(ctx, r.GoPath, "tool", "objdump", "-s", "^main\\.", "main")
-	cmd.Dir = r.buildDir
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return nil, err
-	}
-	return output, nil
-}
-
-func (r *localRun) buildErrors(ctx context.Context) []byte {
-	cmd := exec.CommandContext(ctx, r.GoPath, "build", "-o", os.DevNull, r.mainBasename)
-	cmd.Dir = r.buildDir
-	cmd.Env = r.BuildEnv()
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		output, _ = bytes.CutPrefix(output, []byte("# command-line-arguments\n"))
-		return output
-	}
-	return nil
+	return output, err
 }
 
 func (r *localRun) BuildEnv() []string {

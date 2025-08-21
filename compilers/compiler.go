@@ -87,8 +87,7 @@ type Result struct {
 	SourceFilename string       `json:"sourceFilename"`
 	SourceCode     []byte       `json:"sourceCode"`
 
-	BuildOutput   []byte `json:"buildOutput"`
-	ObjdumpOutput []byte `json:"objdumpOutput"`
+	BuildOutput []byte `json:"buildOutput"`
 }
 
 // List returns available compilers.

@@ -75,8 +75,7 @@ func (api *API) Compile(ctx *fiber.Ctx) error {
 		Code    string                    `json:"code"`
 	}
 	type Response struct {
-		BuildFailed bool   `json:"buildFailed"`
-		BuildOutput string `json:"buildOutput"`
+		BuildFailed bool `json:"buildFailed"`
 		parsers.Result
 	}
 
@@ -118,19 +117,7 @@ func (api *API) Compile(ctx *fiber.Ctx) error {
 		Options:      req.Options,
 	}
 	compRes, err := compiler.Compile(ctx.Context(), compConfig, code)
-	cacheValue.BuildOutput = string(compRes.BuildOutput)
-	if err != nil {
-		cacheValue.BuildFailed = true
-		if api.CompilationCache != nil {
-			if err := api.CompilationCache.Set(cacheKey, cacheValue, api.Config.CompilationCacheTTL); err != nil {
-				return fiber.NewError(fiber.StatusInternalServerError, err.Error())
-			}
-		}
-		return ctx.JSON(Response{
-			BuildFailed: true,
-			BuildOutput: string(compRes.BuildOutput),
-		})
-	}
+	cacheValue.BuildFailed = err != nil
 
 	parser := parsers.FindMatching(compRes)
 	if parser == nil {
@@ -146,7 +133,7 @@ func (api *API) Compile(ctx *fiber.Ctx) error {
 	}
 
 	return ctx.JSON(Response{
-		BuildOutput: string(compRes.BuildOutput),
+		BuildFailed: cacheValue.BuildFailed,
 		Result:      parseRes,
 	})
 }
