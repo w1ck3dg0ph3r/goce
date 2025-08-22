@@ -16,7 +16,7 @@ import { computed, onMounted, reactive, ref, type Ref, nextTick } from 'vue'
 const tabs = reactive<Array<Tab>>([])
 const tabsById = reactive<Map<symbol, Tab>>(new Map())
 const $tabs: Ref<InstanceType<typeof GoceTabs> | null> = ref(null)
-let activeTabId: symbol
+const activeTabId: Ref<symbol | null> = ref(null)
 let nextSourceTabNumber = 1
 let nextDiffTabNumber = 1
 
@@ -158,7 +158,7 @@ bus.on('shareCode', async () => {
         inline: tab.settings.inline,
       })
     }
-    if (tab.id == activeTabId) {
+    if (tab.id == activeTabId.value) {
       shared.activeTab = i
     }
   }
