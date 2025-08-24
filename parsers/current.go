@@ -355,7 +355,7 @@ const (
 	reInliningCall_Name = iota + 1
 )
 
-var reEscapesToHeap = regexp.MustCompile(`^(.+) escapes to heap:$`)
+var reEscapesToHeap = regexp.MustCompile(`^(.+) escapes to heap( in .*)?:$`)
 
 const (
 	reEscapesToHeap_Name = iota + 1
