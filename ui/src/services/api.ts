@@ -107,7 +107,7 @@ export interface CompilationResult {
   diagnostics?: Diagnostic[]
 }
 
-type Diagnostic = InliningAnalysis | InlinedCall | HeapEscape
+type Diagnostic = InliningAnalysis | InlinedCall | HeapEscape | BoundsCheck
 
 interface InliningAnalysis {
   type: 'inliningAnalysis'
@@ -130,6 +130,11 @@ interface HeapEscape {
   range: FileRange
   name?: string
   message?: string
+}
+
+interface BoundsCheck {
+  type: 'boundsCheck'
+  range: FileRange
 }
 
 interface FileRange {

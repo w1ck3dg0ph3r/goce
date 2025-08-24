@@ -171,6 +171,19 @@ export class SourceMap {
             })
             break
           }
+
+          case 'boundsCheck': {
+            const message = 'bounds check'
+            decs.push({
+              range,
+              options: {
+                hoverMessage: { value: message },
+                inlineClassName: 'inline-hover-bounds',
+              },
+            })
+            break
+          }
+
         }
       }
     }

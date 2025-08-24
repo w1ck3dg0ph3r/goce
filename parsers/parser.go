@@ -1,6 +1,7 @@
 package parsers
 
 import (
+	"encoding/gob"
 	"fmt"
 
 	"github.com/Masterminds/semver/v3"
@@ -26,8 +27,15 @@ type Mapping struct {
 }
 
 // Can be one of:
-// [InliningAnalysis], [InlinedCall], [HeapEscape]
+// [Diagnostic], [InliningAnalysis], [InlinedCall], [HeapEscape]
 type IDiagnostic any
+
+func init() {
+	gob.Register(Diagnostic{})
+	gob.Register(InliningAnalysis{})
+	gob.Register(InlinedCall{})
+	gob.Register(HeapEscape{})
+}
 
 type Diagnostic struct {
 	Type  DiagnosticType `json:"type"`
@@ -40,6 +48,7 @@ const (
 	DiagnosticInliningAnalysis DiagnosticType = "inliningAnalysis"
 	DiagnosticInlinedCall      DiagnosticType = "inlinedCall"
 	DiagnosticHeapEscape       DiagnosticType = "heapEscape"
+	DiagnosticBoundsCheck      DiagnosticType = "boundsCheck"
 )
 
 type Range struct {

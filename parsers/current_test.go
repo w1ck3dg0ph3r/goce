@@ -46,3 +46,15 @@ func TestParse(t *testing.T) {
 		}
 	}
 }
+
+func TestParseJSON(t *testing.T) {
+	out, err := os.ReadFile("testdata/main.json")
+	if err != nil {
+		panic(err)
+	}
+	res := &Result{}
+	parseJSON(res, out)
+	if len(res.Diagnostics) == 0 {
+		t.Fail()
+	}
+}

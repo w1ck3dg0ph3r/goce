@@ -1,4 +1,3 @@
-/.cache
-/goce
+/.env
 
 coverage.out

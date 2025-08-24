@@ -3,6 +3,7 @@ package parsers
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"io"
 	"regexp"
 	"strconv"
@@ -18,7 +19,7 @@ type currentParser struct{}
 func (currentParser) Parse(output compilers.Result) Result {
 	var res Result
 	parseBuildOutput(&res, output.SourceCode, bytes.NewReader(output.BuildOutput))
-	// parseObjdumpOutput(&res, bytes.NewReader(output.ObjdumpOutput))
+	parseJSON(&res, output.BuildJSON)
 	return res
 }
 
@@ -190,6 +191,64 @@ func parseBuildOutput(res *Result, sourceCode []byte, output io.Reader) {
 
 	res.Assembly = assembly.String()
 	res.BuildOutput = buildOutput.String()
+}
+
+type bjsonHeader struct {
+	File    string `json:"file"`
+	Version int    `json:"version"`
+}
+
+type bjsonDiagnostic struct {
+	Code    string     `json:"code"`
+	Message string     `json:"message"`
+	Range   bjsonRange `json:"range"`
+}
+
+type bjsonRange struct {
+	Start bjsonPosition `json:"start"`
+	End   bjsonPosition `json:"end"`
+}
+
+type bjsonPosition struct {
+	Line      int `json:"line"`
+	Character int `json:"character"`
+}
+
+func parseJSON(res *Result, data []byte) {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	var header bjsonHeader
+	if err := dec.Decode(&header); err != nil {
+		return
+	}
+	for dec.More() {
+		var d bjsonDiagnostic
+		if err := dec.Decode(&d); err != nil {
+			continue
+		}
+		switch d.Code {
+		case "isInBounds", "isSliceInBounds":
+			diag := Diagnostic{
+				Type: DiagnosticBoundsCheck,
+				Range: Range{
+					Start: Location{Line: d.Range.Start.Line, Column: d.Range.Start.Character},
+					End:   Location{Line: d.Range.End.Line, Column: d.Range.End.Character},
+				},
+			}
+			if diag.Range.End.Column == diag.Range.Start.Column {
+				diag.Range.End.Column += 1
+			}
+			res.Diagnostics = append(res.Diagnostics, diag)
+
+		// Other known codes:
+		case "canInlineFunction":
+		case "cannotInlineCall":
+		case "cannotInlineFunction":
+		case "escape":
+		case "escapes":
+		case "leak":
+		case "nilcheck":
+		}
+	}
 }
 
 func isComment(line []byte) bool {
