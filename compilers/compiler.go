@@ -88,6 +88,7 @@ type Result struct {
 	SourceCode     []byte       `json:"sourceCode"`
 
 	BuildOutput []byte `json:"buildOutput"`
+	BuildJSON   []byte `json:"buildJSON"`
 }
 
 // List returns available compilers.

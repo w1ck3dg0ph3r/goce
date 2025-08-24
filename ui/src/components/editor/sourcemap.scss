@@ -9,6 +9,7 @@ $canInline: #33b674;
 $cannotInline: #e51400;
 $inlinedCall: #00ff00;
 $escapesToHeap: #e59c00;
+$boundsCheck: #00ff00;
 
 $lightBackground: #ffffff;
 $darkBackground: #1e1e1e;
@@ -39,6 +40,11 @@ $darkBackground: #1e1e1e;
 
   .inline-hover-escape {
     border-bottom: 2px $escapesToHeap solid;
+  }
+
+  .inline-hover-bounds {
+    border-bottom: 2px $boundsCheck solid;
+    opacity: 0.5;
   }
 
   .theme-dark {

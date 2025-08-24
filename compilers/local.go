@@ -45,7 +45,7 @@ func (c *localCompiler) Compile(ctx context.Context, config CompilerConfig, code
 		SourceFilename: run.mainFilename,
 		SourceCode:     code,
 	}
-	if res.BuildOutput, err = run.Build(ctx); err != nil {
+	if err = run.Build(ctx, &res); err != nil {
 		return res, fmt.Errorf("build: %w", err)
 	}
 
@@ -132,7 +132,7 @@ func (r *localRun) InitModules(ctx context.Context) error {
 	return nil
 }
 
-func (r *localRun) Build(ctx context.Context) ([]byte, error) {
+func (r *localRun) Build(ctx context.Context, res *Result) error {
 	args := []string{"build", "-o", os.DevNull, "-trimpath"}
 	var gcflags []string
 	if r.Config.Options.DisableInlining {
@@ -143,13 +143,19 @@ func (r *localRun) Build(ctx context.Context) ([]byte, error) {
 	}
 	gcflags = append(gcflags, "-m=2")
 	gcflags = append(gcflags, "-S")
+	gcflags = append(gcflags, "-json=0,"+filepath.Join(r.buildDir, ".build.json"))
 	args = append(args, "-gcflags", strings.Join(gcflags, " "))
 	args = append(args, r.mainFilename)
 	cmd := exec.CommandContext(ctx, r.GoPath, args...)
 	cmd.Dir = r.buildDir
 	cmd.Env = r.BuildEnv()
 	output, err := cmd.CombinedOutput()
-	return output, err
+	res.BuildOutput = output
+	jsonFN := filepath.Join(r.buildDir, ".build.json", "main", "main.json")
+	if b, err := os.ReadFile(jsonFN); err == nil {
+		res.BuildJSON = b
+	}
+	return err
 }
 
 func (r *localRun) BuildEnv() []string {
