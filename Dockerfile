@@ -19,8 +19,8 @@ COPY . .
 COPY --from=ui-builder /src/ui/dist ./ui/dist
 RUN --mount=type=cache,id=golang,target=/go/pkg/mod/ \
     --mount=type=cache,id=golang,target=/root/.cache/go-build \
-    go build -o /bin/goce -ldflags "-s -w -X main.version=${version}" ./cmd/goce &&\
-    go build -o /bin/godl -ldflags "-s -w" ./cmd/tools/godl
+    go build -o /bin/goce -ldflags "-s -w -X main.version=${version}" . &&\
+    go build -o /bin/godl -ldflags "-s -w" ./cmd/godl
 
 FROM docker.io/alpine:3.22
 RUN apk add ca-certificates tzdata curl tar git

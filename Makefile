@@ -19,7 +19,10 @@ build-ui:
 	pnpm build --mode=localhost
 
 build-api:
-	go build -ldflags $(GO_LDFLAGS) ./cmd/goce
+	go build -ldflags $(GO_LDFLAGS) .
+
+run:
+	go run -ldflags $(GO_LDFLAGS) .
 
 test: test-api test-ui
 
