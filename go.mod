@@ -4,7 +4,9 @@ go 1.24
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0
+	github.com/gofiber/contrib/fiberzerolog v1.0.3
 	github.com/gofiber/fiber/v2 v2.52.9
+	github.com/rs/zerolog v1.34.0
 	github.com/spf13/viper v1.20.1
 	go.etcd.io/bbolt v1.4.2
 	mvdan.cc/gofumpt v0.8.0

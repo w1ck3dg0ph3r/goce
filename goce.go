@@ -2,19 +2,19 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/gofiber/contrib/fiberzerolog"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/etag"
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
-	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/rs/zerolog"
 
 	"github.com/w1ck3dg0ph3r/goce/api"
 	"github.com/w1ck3dg0ph3r/goce/compilers"
@@ -27,23 +27,40 @@ import (
 var version string
 
 func main() {
+	log := zerolog.New(os.Stdout).Level(zerolog.InfoLevel)
+	log.Info().Str("version", version).Msg("starting goce")
+
 	cfg, err := config.Read()
 	if err != nil {
-		fmt.Printf("%v\n", err)
+		log.Error().Err(err).Msg("read config failed")
 		os.Exit(1)
 	}
 
 	app := fiber.New(fiber.Config{
-		AppName:       "GoCE " + version,
-		CaseSensitive: true,
-		StrictRouting: true,
-		ReadTimeout:   3 * time.Second,
-		WriteTimeout:  3 * time.Second,
-		IdleTimeout:   30 * time.Second,
+		AppName:               "GoCE " + version,
+		DisableStartupMessage: true,
+		CaseSensitive:         true,
+		StrictRouting:         true,
+		ReadTimeout:           3 * time.Second,
+		WriteTimeout:          3 * time.Second,
+		IdleTimeout:           30 * time.Second,
 	})
 
+	app.Use(fiberzerolog.New(fiberzerolog.Config{
+		Logger: &log,
+		Fields: []string{
+			fiberzerolog.FieldMethod,
+			fiberzerolog.FieldURL,
+			fiberzerolog.FieldStatus,
+			fiberzerolog.FieldLatency,
+		},
+		Messages: []string{
+			"request server error",
+			"request client error",
+			"request success",
+		},
+	}))
 	app.Use(cors.New())
-	app.Use(logger.New())
 	app.Use(compress.New())
 	app.Use(etag.New(etag.Config{Weak: true}))
 	app.Use(sanityCheck())
@@ -56,26 +73,26 @@ func main() {
 		EnableModules:           cfg.Compilers.EnableModules,
 	})
 	if err != nil {
-		fmt.Printf("compilers service: %v\n", err)
+		log.Error().Err(err).Msg("compilers service failed")
 		os.Exit(1)
 	}
 
 	if err := os.Mkdir("data", os.ModeDir|os.ModePerm); err != nil && !errors.Is(err, os.ErrExist) {
-		fmt.Printf("can't create data directory: %v", err.Error())
+		log.Warn().Err(err).Msg("can't create data directory")
 	}
 
 	var compilationCache *cache.Cache[store.CompilationCacheKey, store.CompilationCacheValue]
 	if cfg.Cache.Enabled {
 		compilationCache, err = store.NewCompilationCache("data/cache.db")
 		if err != nil {
-			fmt.Printf("compilation cache: %v", err.Error())
+			log.Error().Err(err).Msg("compilation cache failed")
 			os.Exit(1)
 		}
 	}
 
 	sharedCodeStore, err := store.NewSharedCode("data/shared.db")
 	if err != nil {
-		fmt.Printf("shared code store: %v", err.Error())
+		log.Error().Err(err).Msg("shared code store failed")
 		os.Exit(1)
 	}
 
@@ -98,11 +115,12 @@ func main() {
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 	doneCh := make(chan struct{})
+
 	go func() {
 		<-sigCh
-		fmt.Printf("shutdown signal received, terminating...\n")
+		log.Info().Msg("shutdown signal received, terminating...\n")
 		if err := app.Shutdown(); err != nil {
-			fmt.Printf("shutdown: %v\n", err)
+			log.Error().Err(err).Msg("shutdown failed")
 		}
 		if compilationCache != nil {
 			compilationCache.Close()
@@ -112,8 +130,10 @@ func main() {
 		}
 		doneCh <- struct{}{}
 	}()
+
+	log.Info().Str("address", cfg.Listen).Msg("listening")
 	if err := app.Listen(cfg.Listen); err != nil {
-		fmt.Printf("error: %v\n", err)
+		log.Error().Err(err).Msg("listen failed")
 	}
 	<-doneCh
 }
