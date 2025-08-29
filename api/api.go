@@ -50,7 +50,6 @@ func (api *API) Format(ctx *fiber.Ctx) error {
 
 	var req Request
 	if err := ctx.BodyParser(&req); err != nil {
-		fmt.Println(string(ctx.Body()))
 		return err
 	}
 
