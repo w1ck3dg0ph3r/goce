@@ -276,6 +276,10 @@ func InstallVerion(v RemoteVersion) error {
 		return fmt.Errorf("extract go tarball: %w", err)
 	}
 
+	if err := os.Remove(filepath.Join(sdkDir, filename)); err != nil {
+		return fmt.Errorf("remove go tarball: %w", err)
+	}
+
 	if err := os.Rename(filepath.Join(sdkDir, "go"), filepath.Join(sdkDir, v.Version)); err != nil {
 		return err
 	}
