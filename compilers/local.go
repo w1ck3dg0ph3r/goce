@@ -58,6 +58,7 @@ func (c *localCompiler) Info() (CompilerInfo, error) {
 	}
 
 	cmd := exec.Command(c.GoPath, "version")
+	cmd.Dir = filepath.Dir(c.GoPath)
 	out, err := cmd.Output()
 	if err != nil {
 		return CompilerInfo{}, fmt.Errorf("%w: go version: %w", ErrInvalidPath, err)
@@ -185,7 +186,7 @@ func (r *localRun) BuildEnv() []string {
 	return r.buildEnv
 }
 
-var reGoVersion = regexp.MustCompile(`go(\d+\.\d+(\.\d+)?)\s+(\w+)/(\w+)`)
+var reGoVersion = regexp.MustCompile(`go(\d+\.\d+(\.\d+)?)\s+(?:X:\w+\s+)?(\w+)/(\w+)`)
 
 const (
 	reGoVersion_Version = iota + 1
