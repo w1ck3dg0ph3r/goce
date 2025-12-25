@@ -4,7 +4,7 @@ DOCKER_TAG=$(DOCKER_IMAGE):latest
 
 GO_LDFLAGS="-X main.version=$(VERSION)"
 
-GOLANGCILINT_VERSION=v2.4.0
+GOLANGCILINT_VERSION=v2.7.2
 
 default: build
 

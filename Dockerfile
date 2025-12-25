@@ -9,7 +9,7 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
 COPY ui ./
 RUN pnpm build-only --mode ${ui_mode}
 
-FROM docker.io/golang:1.24-alpine AS api-builder
+FROM docker.io/golang:1.25-alpine AS api-builder
 ARG version=unknown
 WORKDIR /src
 COPY go.mod go.sum ./
@@ -22,7 +22,7 @@ RUN --mount=type=cache,id=golang,target=/go/pkg/mod/ \
     go build -o /bin/goce -ldflags "-s -w -X main.version=${version}" . &&\
     go build -o /bin/godl -ldflags "-s -w" ./cmd/godl
 
-FROM docker.io/alpine:3.22
+FROM docker.io/alpine:3.23
 RUN apk add ca-certificates tzdata curl tar git
 RUN addgroup -g 1000 goce && adduser -u 1000 -DG goce goce &&\
     mkdir /opt/data && chown goce: /opt/data
